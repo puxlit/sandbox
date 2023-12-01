@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 SESSION_COOKIE_VALUE ?= $(shell bash -c 'read -sp "Session cookie value: " SESSION_COOKIE_VALUE; echo $$SESSION_COOKIE_VALUE')
 
-all: part_1_answer.txt
+all: part_1_answer.txt part_2_answer.txt
 
 .SUFFIXES:
 
@@ -10,12 +10,15 @@ check: trebuchet.py
 	python3 -m doctest -v trebuchet.py
 
 clean:
-	rm -f input.txt part_1_answer.txt
+	rm -f input.txt part_1_answer.txt part_2_answer.txt
 
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/1/input'
 
 part_1_answer.txt: trebuchet.py input.txt
 	python3 trebuchet.py 1 input.txt >$@
+
+part_2_answer.txt: trebuchet.py input.txt
+	python3 trebuchet.py 2 input.txt >$@
 
 .PHONY: all check clean
