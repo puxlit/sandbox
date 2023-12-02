@@ -55,7 +55,7 @@ class Game(NamedTuple):
 
     @classmethod
     def from_line(cls, line: str) -> 'Game':
-        (game_fragment, colour_counts_set) = line.rstrip('\n').split(GAME_ID_COLOUR_COUNTS_SET_DELIMITER)
+        (game_fragment, colour_counts_set) = line.split(GAME_ID_COLOUR_COUNTS_SET_DELIMITER)
 
         assert game_fragment.startswith(GAME_ID_PREFIX)
         game_fragment = game_fragment.removeprefix(GAME_ID_PREFIX)
@@ -90,13 +90,13 @@ def is_relevant_game(game: Game) -> bool:
 
 
 def sum_relevant_game_ids(lines: Iterable[str]) -> int:
-    r"""
+    """
     >>> sum_relevant_game_ids([
-    ...     'Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n',
-    ...     'Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n',
-    ...     'Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n',
-    ...     'Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n',
-    ...     'Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green\n',
+    ...     'Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green',
+    ...     'Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue',
+    ...     'Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red',
+    ...     'Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red',
+    ...     'Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green',
     ... ])
     8
     """
@@ -109,16 +109,16 @@ def sum_relevant_game_ids(lines: Iterable[str]) -> int:
 ########################################################################################################################
 
 def calculate_game_power(game: Game) -> int:
-    r"""
-    >>> calculate_game_power(Game.from_line('Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n'))
+    """
+    >>> calculate_game_power(Game.from_line('Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green'))
     48
-    >>> calculate_game_power(Game.from_line('Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n'))
+    >>> calculate_game_power(Game.from_line('Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue'))
     12
-    >>> calculate_game_power(Game.from_line('Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n'))
+    >>> calculate_game_power(Game.from_line('Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red'))
     1560
-    >>> calculate_game_power(Game.from_line('Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n'))
+    >>> calculate_game_power(Game.from_line('Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red'))
     630
-    >>> calculate_game_power(Game.from_line('Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green\n'))
+    >>> calculate_game_power(Game.from_line('Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green'))
     36
     """
     (red, green, blue) = game.minimal_cube_collection
@@ -126,13 +126,13 @@ def calculate_game_power(game: Game) -> int:
 
 
 def sum_game_powers(lines: Iterable[str]) -> int:
-    r"""
+    """
     >>> sum_game_powers([
-    ...     'Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n',
-    ...     'Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n',
-    ...     'Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n',
-    ...     'Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n',
-    ...     'Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green\n',
+    ...     'Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green',
+    ...     'Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue',
+    ...     'Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red',
+    ...     'Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red',
+    ...     'Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green',
     ... ])
     2286
     """
@@ -151,11 +151,12 @@ def main() -> None:
     parser.add_argument('part', type=int, choices=(1, 2))
     parser.add_argument('input', type=argparse.FileType('rt'))
     args = parser.parse_args()
+    lines = (line.rstrip('\n') for line in args.input)
 
     if (args.part == 1):
-        print(sum_relevant_game_ids(args.input))
+        print(sum_relevant_game_ids(lines))
     elif (args.part == 2):
-        print(sum_game_powers(args.input))
+        print(sum_game_powers(lines))
     else:
         raise ValueError()
 
