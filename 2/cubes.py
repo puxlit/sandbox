@@ -105,6 +105,42 @@ def sum_relevant_game_ids(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def calculate_game_power(game: Game) -> int:
+    r"""
+    >>> calculate_game_power(Game.from_line('Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n'))
+    48
+    >>> calculate_game_power(Game.from_line('Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n'))
+    12
+    >>> calculate_game_power(Game.from_line('Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n'))
+    1560
+    >>> calculate_game_power(Game.from_line('Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n'))
+    630
+    >>> calculate_game_power(Game.from_line('Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green\n'))
+    36
+    """
+    (red, green, blue) = game.minimal_cube_collection
+    return red * green * blue
+
+
+def sum_game_powers(lines: Iterable[str]) -> int:
+    r"""
+    >>> sum_game_powers([
+    ...     'Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n',
+    ...     'Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n',
+    ...     'Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n',
+    ...     'Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n',
+    ...     'Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green\n',
+    ... ])
+    2286
+    """
+    games = Game.from_lines(lines)
+    return sum(map(calculate_game_power, games))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -112,12 +148,14 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('part', type=int, choices=(1,))
+    parser.add_argument('part', type=int, choices=(1, 2))
     parser.add_argument('input', type=argparse.FileType('rt'))
     args = parser.parse_args()
 
     if (args.part == 1):
         print(sum_relevant_game_ids(args.input))
+    elif (args.part == 2):
+        print(sum_game_powers(args.input))
     else:
         raise ValueError()
 
