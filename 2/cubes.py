@@ -15,6 +15,7 @@ from typing import NamedTuple
 
 COLOUR_COUNTS_DELIMITER = ', '
 COLOUR_COUNT_DELIMITER = ' '
+COLOURS = {'red', 'green', 'blue'}
 
 
 class CubeCollection(NamedTuple):
@@ -24,23 +25,42 @@ class CubeCollection(NamedTuple):
 
     @classmethod
     def from_colour_counts(cls, colour_counts: str) -> 'CubeCollection':
-        (red, green, blue) = (None, None, None)
+        """
+        >>> CubeCollection.from_colour_counts('1 red')
+        CubeCollection(red=1, green=0, blue=0)
+        >>> CubeCollection.from_colour_counts('001 red')
+        CubeCollection(red=1, green=0, blue=0)
+        >>> CubeCollection.from_colour_counts('0 green')
+        CubeCollection(red=0, green=0, blue=0)
+        >>> CubeCollection.from_colour_counts('-1 blue')
+        Traceback (most recent call last):
+            ...
+        ValueError: '-1' is not a valid count for the colour 'blue'
+        >>> CubeCollection.from_colour_counts('1 purple')
+        Traceback (most recent call last):
+            ...
+        ValueError: 'purple' is not a valid colour
+        >>> CubeCollection.from_colour_counts('1 red, 2 green, 3 blue')
+        CubeCollection(red=1, green=2, blue=3)
+        >>> CubeCollection.from_colour_counts('2 green, 1 red, 3 blue')
+        CubeCollection(red=1, green=2, blue=3)
+        >>> CubeCollection.from_colour_counts('2 green, 1 red, 3 blue, 4 red')
+        Traceback (most recent call last):
+            ...
+        ValueError: count for colour 'red' was specified multiple times (1 and 4)
+        """
+        counts: dict[str, int] = {}
         for colour_count in colour_counts.split(COLOUR_COUNTS_DELIMITER):
             (count, colour) = colour_count.split(COLOUR_COUNT_DELIMITER)
-            assert count.isdigit()
-            if colour == 'red':
-                # Ensure the count for this colour has not been previously set.
-                assert red is None
-                red = int(count)
-            elif colour == 'green':
-                assert green is None
-                green = int(count)
-            elif colour == 'blue':
-                assert blue is None
-                blue = int(count)
-            else:
-                raise ValueError()
-        return CubeCollection(red or 0, green or 0, blue or 0)
+            if not count.isdigit():
+                raise ValueError(f'{count!r} is not a valid count for the colour {colour!r}')
+            if colour not in COLOURS:
+                raise ValueError(f'{colour!r} is not a valid colour')
+            if colour in counts:
+                raise ValueError(f'count for colour {colour!r} was specified multiple times '
+                                 f'({counts[colour]} and {int(count)})')
+            counts[colour] = int(count)
+        return CubeCollection(**{colour: counts.get(colour, 0) for colour in COLOURS})
 
 
 GAME_ID_COLOUR_COUNTS_SET_DELIMITER = ': '
@@ -55,11 +75,26 @@ class Game(NamedTuple):
 
     @classmethod
     def from_line(cls, line: str) -> 'Game':
+        """
+        >>> Game.from_line('Game 1: 1 red, 2 green; 3 blue, 3 red; 3 green')
+        Game(id_=1, witnessed_cube_collections=(CubeCollection(red=1, green=2, blue=0), CubeCollection(red=3, green=0, blue=3), CubeCollection(red=0, green=3, blue=0)), minimal_cube_collection=CubeCollection(red=3, green=3, blue=3))
+        >>> Game.from_line('Juego 1: 1 red, 2 green')
+        Traceback (most recent call last):
+            ...
+        ValueError: Game ID fragment 'Juego 1' does not start with expected prefix 'Game '
+        >>> Game.from_line('Game -1: 1 red, 2 green')
+        Traceback (most recent call last):
+            ...
+        ValueError: '-1' is not a valid game ID
+        """
         (game_fragment, colour_counts_set) = line.split(GAME_ID_COLOUR_COUNTS_SET_DELIMITER)
 
-        assert game_fragment.startswith(GAME_ID_PREFIX)
+        if not game_fragment.startswith(GAME_ID_PREFIX):
+            raise ValueError(f'Game ID fragment {game_fragment!r} does not start with '
+                             f'expected prefix {GAME_ID_PREFIX!r}')
         game_fragment = game_fragment.removeprefix(GAME_ID_PREFIX)
-        assert game_fragment.isdigit()
+        if not game_fragment.isdigit():
+            raise ValueError(f'{game_fragment!r} is not a valid game ID')
         id_ = int(game_fragment)
 
         witnessed_cube_collections = []
@@ -76,15 +111,39 @@ class Game(NamedTuple):
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> Iterator['Game']:
-        witnessed_game_ids = set()
+        """
+        >>> list(Game.from_lines([
+        ...     'Game 1: 1 red',
+        ...     'Game 2: 1 green',
+        ...     'Game 1: 1 blue',
+        ... ]))
+        Traceback (most recent call last):
+            ...
+        ValueError: game ID 1 was specified multiple times (Game(id_=1, witnessed_cube_collections=(CubeCollection(red=1, green=0, blue=0),), minimal_cube_collection=CubeCollection(red=1, green=0, blue=0)) and Game(id_=1, witnessed_cube_collections=(CubeCollection(red=0, green=0, blue=1),), minimal_cube_collection=CubeCollection(red=0, green=0, blue=1)))
+        """
+        witnessed_game_ids: dict[int, Game] = {}
         for line in lines:
             game = Game.from_line(line)
-            assert game.id_ not in witnessed_game_ids
-            witnessed_game_ids.add(game.id_)
+            if game.id_ in witnessed_game_ids:
+                raise ValueError(f'game ID {game.id_} was specified multiple times '
+                                 f'({witnessed_game_ids[game.id_]} and {game})')
+            witnessed_game_ids[game.id_] = game
             yield game
 
 
 def is_relevant_game(game: Game) -> bool:
+    """
+    >>> is_relevant_game(Game.from_line('Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green'))
+    True
+    >>> is_relevant_game(Game.from_line('Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue'))
+    True
+    >>> is_relevant_game(Game.from_line('Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red'))
+    False
+    >>> is_relevant_game(Game.from_line('Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red'))
+    False
+    >>> is_relevant_game(Game.from_line('Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green'))
+    True
+    """
     (red, green, blue) = game.minimal_cube_collection
     return (red <= 12) and (green <= 13) and (blue <= 14)
 
@@ -158,7 +217,7 @@ def main() -> None:
     elif (args.part == 2):
         print(sum_game_powers(lines))
     else:
-        raise ValueError()
+        raise ValueError(f'{args.part} is not a valid part')
 
 
 if __name__ == '__main__':
