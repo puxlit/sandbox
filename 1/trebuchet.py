@@ -134,7 +134,7 @@ def extract_digits(chars: Iterable[int]) -> Iterator[int]:
                         # We matched the last expected letter; yield and delete.
                         yield digit
                         del partial_spellings[i]
-                if (partial_spellings[-1] != full_spelling):
+                if partial_spellings[-1] != full_spelling:
                     # Ensure we can always match from the start of the spelled digit.
                     partial_spellings.append(full_spelling)
 
@@ -196,9 +196,9 @@ def main() -> None:
     args = parser.parse_args()
     lines = (line.rstrip(b'\n') for line in args.input)
 
-    if (args.part == 1):
+    if args.part == 1:
         print(sum_naive_calibration_values(lines))
-    elif (args.part == 2):
+    elif args.part == 2:
         print(sum_calibration_values(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
