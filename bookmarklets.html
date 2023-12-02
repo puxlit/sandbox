@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bookmarklets</title>
+</head><body><p><span>NB: Firefox blanks the page with the value of the expression if it's not </span><code>undefined</code><span>, hence all JS is wrapped in an IIFE.</span></p><ul class="bookmarklets">
+<li><a href="javascript:(()%3D%3E%7Bdocument.addEventListener('keyup'%2Ce%3D%3E%7Bswitch(e.key)%7Bcase%20'h'%3Adocument.querySelector('.pagination-link.type-next').click()%3Bbreak%3Bcase%20'l'%3Adocument.querySelector('.pagination-link.type-prev').click()%3Bbreak%3Bcase%20'%3A'%3Aconst%20x%3Ddocument.querySelector('header.controls')%3Bx.style.display%3Dx.style.display%3D%3D%3D'none'%3F''%3A'none'%3Bbreak%7D%7D)%7D)()">[CR: Fix Beta Manga Reader]</a><pre><code><!--
+-->document.addEventListener('keyup', e =&gt; {
+    switch (e.key) {
+        case 'h':
+            document.querySelector('.pagination-link.type-next').click();
+            break;
+        case 'l':
+            document.querySelector('.pagination-link.type-prev').click();
+            break;
+        case ':':
+            const x = document.querySelector('header.controls');
+            x.style.display = x.style.display === 'none' ? '' : 'none';
+            break;
+    }
+});
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bconst%20p%3Ddocument.querySelector('%5Bdata-id%5D%3Afocus')%3Bif(p%3D%3Dnull)%7Balert('Please%20first%20focus%20on%20a%20post.')%3Breturn%7Dfor(const%20k%20in%20p)%7Bif(p.hasOwnProperty(k)%26%26k.startsWith('__reactFiber%24'))%7Bconst%20s%3Dp.dataset.id%2Ct%3Dp%5Bk%5D.child.child.child.memoizedProps.timelineObject.date%3Balert(%60Focussed%20post's%20snowflake%20and%20timestamp%20are%20%24%7B%20s%20%7D%20and%20%24%7B%20t%20%7D.%60)%3Bnavigator.clipboard.writeText(%60%24%7B%20s%20%7D%3A%20%24%7B%20t%20%7D%60)%3Breturn%7D%7Dalert('Failed%20to%20find%20React%20internal%20instance%20on%20focussed%20post.')%3B%3B%7D)()">[Tumblr: Get Timestamp]</a><pre><code><!--
+-->const p = document.querySelector('[data-id]:focus');
+if (p == null) {
+    alert('Please first focus on a post.');
+    return;
+}
+
+for (const k in p) {
+    if (p.hasOwnProperty(k) && k.startsWith('__reactFiber$')) {
+        const
+            s = p.dataset.id,
+            t = p[k].child.child.child.memoizedProps.timelineObject.date;
+        alert(`Focussed post's snowflake and timestamp are ${s} and ${t}.`);
+        navigator.clipboard.writeText(`${s}: ${t}`);
+        return;
+    }
+}
+
+alert('Failed to find React internal instance on focussed post.');
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bdocument.querySelector('video').playbackRate%3D1%7D)()">[Video: 1×]</a><pre><code><!--
+-->document.querySelector('video').playbackRate = 1;
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bdocument.querySelector('video').playbackRate%3D1.5%7D)()">[Video: 1.5×]</a><pre><code><!--
+-->document.querySelector('video').playbackRate = 1.5;
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bdocument.querySelector('video').playbackRate%3D1.75%7D)()">[Video: 1.75×]</a><pre><code><!--
+-->document.querySelector('video').playbackRate = 1.75;
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bdocument.querySelector('video').playbackRate%3D2%7D)()">[Video: 2×]</a><pre><code><!--
+-->document.querySelector('video').playbackRate = 2;
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bconst%20v%3Ddocument.querySelector('video')%2Cc%3Ddocument.createElement('canvas')%2Cx%3Dc.getContext('2d')%3Bc.width%3Dv.videoWidth%3Bc.height%3Dv.videoHeight%3Bx.drawImage(v%2C0%2C0)%3Bc.toBlob(b%3D%3E%7Bconst%20u%3DURL.createObjectURL(b)%2Ca%3Ddocument.createElement('a')%2Ct%3Dv.currentTime%2Cz%3Dn%3D%3En.toString().padStart(2%2C'0')%3Ba.href%3Du%3Ba.target%3D'_blank'%3Ba.download%3D%60%24%7BMath.floor(t%2F3600)%7Dh%24%7Bz(Math.floor(t%2F60)%2560)%7Dm%24%7Bz(Math.floor(t%2560))%7Ds.png%60%3Ba.click()%3BURL.revokeObjectURL(u)%7D)%7D)()">[Video: Screenshot]</a><pre><code><!--
+-->const
+    v = document.querySelector('video'),
+    c = document.createElement('canvas'),
+    x = c.getContext('2d');
+c.width = v.videoWidth;
+c.height = v.videoHeight;
+x.drawImage(v, 0, 0);
+c.toBlob(b =&gt; {
+    const
+        u = URL.createObjectURL(b),
+        a = document.createElement('a'),
+        t = v.currentTime,
+        z = n =&gt; n.toString().padStart(2, '0');
+    a.href = u;
+    a.target = '_blank';
+    a.download = `${Math.floor(t / 3600)}h${z(Math.floor(t / 60) % 60)}m${z(Math.floor(t % 60))}s.png`;
+    a.click();
+    URL.revokeObjectURL(u);
+});
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bconst%20d%3Ddocument.getElementById('chatframe').contentDocument%2Cs%3Dd.createElement('style')%3Bs.appendChild(d.createTextNode('yt-live-chat-text-message-renderer%7Bcontain%3Alayout style!important%7D'))%3Bd.head.appendChild(s)%7D)()">[YT: Fix Chat Tooltips]</a><pre><code><!--
+-->const
+    d = document.getElementById('chatframe').contentDocument,
+    s = d.createElement('style');
+s.appendChild(d.createTextNode('yt-live-chat-text-message-renderer { contain: layout style !important; }'));
+d.head.appendChild(s);
+</code></pre></li>
+<li><a href="javascript:(()%3D%3E%7Bfor(const%20e%20of%20document.querySelectorAll('.ytp-ce-element'))e.remove()%7D)()">[YT: Nix Junk]</a><pre><code><!--
+-->for (const e of document.querySelectorAll('.ytp-ce-element')) {
+    e.remove();
+}
+</code></pre></li>
+</ul></body></html>
