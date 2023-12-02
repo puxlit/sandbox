@@ -139,11 +139,12 @@ def main() -> None:
     parser.add_argument('part', type=int, choices=(1, 2))
     parser.add_argument('input', type=argparse.FileType('rb'))
     args = parser.parse_args()
+    lines = (line.rstrip(b'\n') for line in args.input)
 
     if (args.part == 1):
-        print(sum_naive_calibration_values(args.input))
+        print(sum_naive_calibration_values(lines))
     elif (args.part == 2):
-        print(sum_calibration_values(args.input))
+        print(sum_calibration_values(lines))
     else:
         raise ValueError()
 
