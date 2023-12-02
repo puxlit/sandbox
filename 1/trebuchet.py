@@ -17,10 +17,24 @@ ASCII_NINE = 0x39
 
 
 def extract_naive_first_digit(chars: Iterable[int]) -> int:
+    """
+    >>> extract_naive_first_digit(b'1abc2')
+    1
+    >>> extract_naive_first_digit(b'pqr3stu8vwx')
+    3
+    >>> extract_naive_first_digit(b'a1b2c3d4e5f')
+    1
+    >>> extract_naive_first_digit(b'treb7uchet')
+    7
+    >>> extract_naive_first_digit(b'nada')
+    Traceback (most recent call last):
+        ...
+    ValueError: b'nada' contains no digits
+    """
     for char in chars:
         if ASCII_ZERO <= char <= ASCII_NINE:
             return char - ASCII_ZERO
-    raise ValueError()
+    raise ValueError(f'{bytes(chars)!r} contains no digits')
 
 
 def extract_naive_calibration_values(lines: Iterable[bytes]) -> Iterator[int]:
@@ -42,6 +56,15 @@ def extract_naive_calibration_values(lines: Iterable[bytes]) -> Iterator[int]:
 
 
 def sum_naive_calibration_values(lines: Iterable[bytes]) -> int:
+    """
+    >>> sum_naive_calibration_values([
+    ...     b'1abc2',
+    ...     b'pqr3stu8vwx',
+    ...     b'a1b2c3d4e5f',
+    ...     b'treb7uchet',
+    ... ])
+    142
+    """
     return sum(extract_naive_calibration_values(lines))
 
 
@@ -65,10 +88,26 @@ SPELLED_DIGITS = {
 
 def extract_digits(chars: Iterable[int]) -> Iterator[int]:
     """
+    >>> list(extract_digits(b'two1nine'))
+    [2, 1, 9]
+    >>> list(extract_digits(b'eightwothree'))
+    [8, 2, 3]
+    >>> list(extract_digits(b'abcone2threexyz'))
+    [1, 2, 3]
+    >>> list(extract_digits(b'xtwone3four'))
+    [2, 1, 3, 4]
+    >>> list(extract_digits(b'4nineeightseven2'))
+    [4, 9, 8, 7, 2]
+    >>> list(extract_digits(b'zoneight234'))
+    [1, 8, 2, 3, 4]
+    >>> list(extract_digits(b'7pqrstsixteen'))
+    [7, 6]
     >>> list(extract_digits(b'twone'))
     [2, 1]
     >>> list(extract_digits(b'ninine'))
     [9]
+    >>> list(extract_digits(b'nada'))
+    []
     """
     spelled_digits = {digit: [spelling] for (digit, spelling) in SPELLED_DIGITS.items()}
     for char in chars:
@@ -114,17 +153,33 @@ def extract_calibration_values(lines: Iterable[bytes]) -> Iterator[int]:
     ...     b'7pqrstsixteen',
     ... ]))
     [29, 83, 13, 24, 42, 14, 76]
+    >>> list(extract_calibration_values([b'nada']))
+    Traceback (most recent call last):
+        ...
+    ValueError: b'nada' contains no digits
     """
     for line in lines:
         digits = list(extract_digits(line))
         if not digits:
-            raise ValueError()
+            raise ValueError(f'{line!r} contains no digits')
         first_digit = digits[0]
         last_digit = digits[-1]
         yield (first_digit * 10) + last_digit
 
 
 def sum_calibration_values(lines: Iterable[bytes]) -> int:
+    """
+    >>> sum_calibration_values([
+    ...     b'two1nine',
+    ...     b'eightwothree',
+    ...     b'abcone2threexyz',
+    ...     b'xtwone3four',
+    ...     b'4nineeightseven2',
+    ...     b'zoneight234',
+    ...     b'7pqrstsixteen',
+    ... ])
+    281
+    """
     return sum(extract_calibration_values(lines))
 
 
@@ -146,7 +201,7 @@ def main() -> None:
     elif (args.part == 2):
         print(sum_calibration_values(lines))
     else:
-        raise ValueError()
+        raise ValueError(f'{args.part} is not a valid part')
 
 
 if __name__ == '__main__':
