@@ -212,9 +212,9 @@ def main() -> None:
     args = parser.parse_args()
     lines = (line.rstrip('\n') for line in args.input)
 
-    if (args.part == 1):
+    if args.part == 1:
         print(sum_relevant_game_ids(lines))
-    elif (args.part == 2):
+    elif args.part == 2:
         print(sum_game_powers(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
