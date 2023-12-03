@@ -97,11 +97,17 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
     ...     '..$.56.',
     ... ]))
     [12, 34, 56]
+    >>> list(extract_part_numbers([
+    ...     '1.2.3',
+    ...     '4#.$5',
+    ...     '6.7.8'
+    ... ]))
+    [1, 2, 3, 4, 5, 6, 7, 8]
     """
     candidate_numbers: list[Number] = []
     candidate_symbols: list[Symbol] = []
 
-    def handle_new_number(y: int, number: Number) -> Iterator[int]:
+    def handle_new_number(number: Number) -> Iterator[int]:
         i = 0
         while i < len(candidate_symbols):
             symbol = candidate_symbols[i]
@@ -116,6 +122,7 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
                     candidate_numbers.append(number.as_part_number())
                 return
             else:
+                assert not symbol.point.is_after(number.aabb)
                 i += 1
         candidate_numbers.append(number)
 
@@ -128,10 +135,12 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
                     yield number.value
                     del candidate_numbers[i]
                 else:
+                    assert not symbol.point.is_after(number.aabb)
                     i += 1
             elif symbol.point.is_after(number.aabb):
                 # This number's AABB is well before the new symbol, and cannot possibly be a part number anymore.
                 assert i == 0
+                assert not number.is_part_number
                 del candidate_numbers[i]
             elif symbol.point.intersects(number.aabb):
                 if i == 0:
@@ -189,7 +198,7 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
         # schematic.
         min_ = Point(start_pos.x - 1, start_pos.y - 1)
         max_ = Point(exclusive_end_pos.x, exclusive_end_pos.y + 1)
-        yield from handle_new_number(exclusive_end_pos.y, Number(number, AABB(min_, max_), False))
+        yield from handle_new_number(Number(number, AABB(min_, max_), False))
         partial_number = None
 
     for (y, line) in enumerate(lines):
@@ -211,6 +220,9 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
             else:
                 raise ValueError(f'Unexpected character {char!r} at line {y + 1}, column {x + 1}')
         yield from finish_number(Point(x + 1, y))
+    # Hack to flush out any remaining part numbers.
+    yield from handle_new_symbol(Symbol('#', Point(x + 2, y + 2)))
+    assert not candidate_numbers
 
 
 def sum_part_numbers(lines: Iterable[str]) -> int:
