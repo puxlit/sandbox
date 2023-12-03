@@ -6,7 +6,7 @@
 ########################################################################################################################
 
 from collections.abc import Iterable, Iterator
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union
 
 
 ########################################################################################################################
@@ -39,12 +39,13 @@ class AABB(NamedTuple):
 
 
 ########################################################################################################################
-# Part 1
+# Engine schematic
 ########################################################################################################################
 
 BLANK_SPACE = '.'
+GEAR_SYMBOL = '*'
 # Derived valid symbols via `cat input.txt | tr -d $'\n.0123456789' | fold -bw1 | LC_ALL=C sort -u`.
-VALID_SYMBOLS = {'#', '$', '%', '&', '*', '+', '-', '/', '=', '@'}
+VALID_SYMBOLS = {'#', '$', '%', '&', GEAR_SYMBOL, '+', '-', '/', '=', '@'}
 
 
 class Number(NamedTuple):
@@ -61,90 +62,66 @@ class Symbol(NamedTuple):
     value: str
     point: Point
 
+    def intersects(self, number: Number) -> bool:
+        return self.point.intersects(number.aabb)
 
-def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
-    """
-    >>> list(extract_part_numbers([
-    ...     '467..114..',
-    ...     '...*......',
-    ...     '..35..633.',
-    ...     '......#...',
-    ...     '617*......',
-    ...     '.....+.58.',
-    ...     '..592.....',
-    ...     '......755.',
-    ...     '...$.*....',
-    ...     '.664.598..',
-    ... ]))
-    [467, 35, 633, 617, 592, 755, 664, 598]
-    >>> list(extract_part_numbers([
-    ...     '.........',
-    ...     '......',
-    ... ]))
-    Traceback (most recent call last):
-        ...
-    ValueError: Width of line 2 differs from line 1 (6 ≠ 9)
-    >>> list(extract_part_numbers([
-    ...     '.....',
-    ...     '..!..',
-    ...     '.....',
-    ... ]))
-    Traceback (most recent call last):
-        ...
-    ValueError: Unexpected character '!' at line 2, column 3
-    >>> list(extract_part_numbers([
-    ...     '12..34#',
-    ...     '..$.56.',
-    ... ]))
-    [12, 34, 56]
-    >>> list(extract_part_numbers([
-    ...     '1.2.3',
-    ...     '4#.$5',
-    ...     '6.7.8'
-    ... ]))
-    [1, 2, 3, 4, 5, 6, 7, 8]
-    """
+    def is_before(self, number: Number) -> bool:
+        return self.point.is_before(number.aabb)
+
+    def is_after(self, number: Number) -> bool:
+        return self.point.is_after(number.aabb)
+
+
+class PartNumber(NamedTuple):
+    value: int
+
+
+class GearRatio(NamedTuple):
+    value: int
+
+
+def parse_schematic(lines: Iterable[str]) -> Iterator[Union[PartNumber, GearRatio]]:
     candidate_numbers: list[Number] = []
     candidate_symbols: list[Symbol] = []
 
-    def handle_new_number(number: Number) -> Iterator[int]:
+    def handle_new_number(number: Number) -> Iterator[Union[PartNumber, GearRatio]]:
         i = 0
         while i < len(candidate_symbols):
             symbol = candidate_symbols[i]
-            if symbol.point.is_before(number.aabb):
+            if symbol.is_before(number):
                 # The new number's AABB is well after this symbol, so this symbol cannot possibly intersect with any
                 # future number's AABB.
                 del candidate_symbols[i]
-            elif symbol.point.intersects(number.aabb):
+            elif symbol.intersects(number):
                 if not candidate_numbers:
-                    yield number.value
+                    yield PartNumber(number.value)
                 else:
                     candidate_numbers.append(number.as_part_number())
                 return
             else:
-                assert not symbol.point.is_after(number.aabb)
+                assert not symbol.is_after(number)
                 i += 1
         candidate_numbers.append(number)
 
-    def handle_new_symbol(symbol: Symbol) -> Iterator[int]:
+    def handle_new_symbol(symbol: Symbol) -> Iterator[Union[PartNumber, GearRatio]]:
         i = 0
         while i < len(candidate_numbers):
             number = candidate_numbers[i]
             if number.is_part_number:
                 if i == 0:
-                    yield number.value
+                    yield PartNumber(number.value)
                     del candidate_numbers[i]
                 else:
-                    assert not symbol.point.is_after(number.aabb)
+                    assert not symbol.is_after(number)
                     i += 1
-            elif symbol.point.is_after(number.aabb):
+            elif symbol.is_after(number):
                 # This number's AABB is well before the new symbol, and cannot possibly be a part number anymore.
                 assert i == 0
                 assert not number.is_part_number
                 del candidate_numbers[i]
-            elif symbol.point.intersects(number.aabb):
+            elif symbol.intersects(number):
                 if i == 0:
-                    yield number.value
+                    yield PartNumber(number.value)
                     del candidate_numbers[i]
                 else:
                     candidate_numbers[i] = number.as_part_number()
@@ -177,7 +154,7 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
         )
         partial_number = ((number * 10) + digit, start_pos)
 
-    def finish_number(exclusive_end_pos: Point) -> Iterator[int]:
+    def finish_number(exclusive_end_pos: Point) -> Iterator[Union[PartNumber, GearRatio]]:
         nonlocal partial_number
         if partial_number is None:
             return
@@ -221,8 +198,59 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
                 raise ValueError(f'Unexpected character {char!r} at line {y + 1}, column {x + 1}')
         yield from finish_number(Point(x + 1, y))
     # Hack to flush out any remaining part numbers.
+    # TODO: Add unit test.
     yield from handle_new_symbol(Symbol('#', Point(x + 2, y + 2)))
     assert not candidate_numbers
+
+
+########################################################################################################################
+# Part 1
+########################################################################################################################
+
+def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
+    """
+    >>> list(extract_part_numbers([
+    ...     '467..114..',
+    ...     '...*......',
+    ...     '..35..633.',
+    ...     '......#...',
+    ...     '617*......',
+    ...     '.....+.58.',
+    ...     '..592.....',
+    ...     '......755.',
+    ...     '...$.*....',
+    ...     '.664.598..',
+    ... ]))
+    [467, 35, 633, 617, 592, 755, 664, 598]
+    >>> list(extract_part_numbers([
+    ...     '.........',
+    ...     '......',
+    ... ]))
+    Traceback (most recent call last):
+        ...
+    ValueError: Width of line 2 differs from line 1 (6 ≠ 9)
+    >>> list(extract_part_numbers([
+    ...     '.....',
+    ...     '..!..',
+    ...     '.....',
+    ... ]))
+    Traceback (most recent call last):
+        ...
+    ValueError: Unexpected character '!' at line 2, column 3
+    >>> list(extract_part_numbers([
+    ...     '12..34#',
+    ...     '..$.56.',
+    ... ]))
+    [12, 34, 56]
+    >>> list(extract_part_numbers([
+    ...     '1.2.3',
+    ...     '4#.$5',
+    ...     '6.7.8'
+    ... ]))
+    [1, 2, 3, 4, 5, 6, 7, 8]
+    """
+    part_numbers = filter(lambda x: isinstance(x, PartNumber), parse_schematic(lines))
+    return map(lambda x: x.value, part_numbers)
 
 
 def sum_part_numbers(lines: Iterable[str]) -> int:
@@ -245,6 +273,55 @@ def sum_part_numbers(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def extract_gear_ratios(lines: Iterable[str]) -> Iterator[int]:
+    """
+    >>> list(extract_gear_ratios([
+    ...     '467..114..',
+    ...     '...*......',
+    ...     '..35..633.',
+    ...     '......#...',
+    ...     '617*......',
+    ...     '.....+.58.',
+    ...     '..592.....',
+    ...     '......755.',
+    ...     '...$.*....',
+    ...     '.664.598..',
+    ... ]))
+    [16345, 451490]
+    >>> list(extract_gear_ratios([
+    ...     '..2..#...3.#...11',
+    ...     '..*..#..*..#.7*..',
+    ...     '.....#.5...#...13',
+    ... ]))
+    [15]
+    """
+    gear_ratios = filter(lambda x: isinstance(x, GearRatio), parse_schematic(lines))
+    return map(lambda x: x.value, gear_ratios)
+
+
+def sum_gear_ratios(lines: Iterable[str]) -> int:
+    """
+    >>> sum_gear_ratios([
+    ...     '467..114..',
+    ...     '...*......',
+    ...     '..35..633.',
+    ...     '......#...',
+    ...     '617*......',
+    ...     '.....+.58.',
+    ...     '..592.....',
+    ...     '......755.',
+    ...     '...$.*....',
+    ...     '.664.598..',
+    ... ])
+    467835
+    """
+    return sum(extract_gear_ratios(lines))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -259,6 +336,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_part_numbers(lines))
+    elif args.part == 2:
+        print(sum_gear_ratios(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
