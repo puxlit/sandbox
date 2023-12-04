@@ -63,8 +63,8 @@ class CubeCollection(NamedTuple):
         return CubeCollection(**{colour: counts.get(colour, 0) for colour in COLOURS})
 
 
-GAME_ID_COLOUR_COUNTS_SET_DELIMITER = ': '
-GAME_ID_PREFIX = 'Game '
+GAME_HEADER_DELIMITER = ': '
+GAME_HEADER_PREFIX = 'Game '
 COLOUR_COUNTS_SET_DELIMITER = '; '
 
 
@@ -81,25 +81,25 @@ class Game(NamedTuple):
         >>> Game.from_line('Juego 1: 1 red, 2 green')
         Traceback (most recent call last):
             ...
-        ValueError: Game ID fragment 'Juego 1' does not start with expected prefix 'Game '
+        ValueError: Game header 'Juego 1' does not start with expected prefix 'Game '
         >>> Game.from_line('Game -1: 1 red, 2 green')
         Traceback (most recent call last):
             ...
         ValueError: '-1' is not a valid game ID
         """
-        (game_fragment, colour_counts_set) = line.split(GAME_ID_COLOUR_COUNTS_SET_DELIMITER)
+        (header, body) = line.split(GAME_HEADER_DELIMITER)
 
-        if not game_fragment.startswith(GAME_ID_PREFIX):
-            raise ValueError(f'Game ID fragment {game_fragment!r} does not start with '
-                             f'expected prefix {GAME_ID_PREFIX!r}')
-        game_fragment = game_fragment.removeprefix(GAME_ID_PREFIX)
-        if not game_fragment.isdigit():
-            raise ValueError(f'{game_fragment!r} is not a valid game ID')
-        id_ = int(game_fragment)
+        if not header.startswith(GAME_HEADER_PREFIX):
+            raise ValueError(f'Game header {header!r} does not start with '
+                             f'expected prefix {GAME_HEADER_PREFIX!r}')
+        header = header.removeprefix(GAME_HEADER_PREFIX)
+        if not header.isdigit():
+            raise ValueError(f'{header!r} is not a valid game ID')
+        id_ = int(header)
 
         witnessed_cube_collections = []
         (minimal_red, minimal_green, minimal_blue) = (0, 0, 0)
-        for colour_counts in colour_counts_set.split(COLOUR_COUNTS_SET_DELIMITER):
+        for colour_counts in body.split(COLOUR_COUNTS_SET_DELIMITER):
             witnessed_cube_collection = CubeCollection.from_colour_counts(colour_counts)
             witnessed_cube_collections.append(witnessed_cube_collection)
             minimal_red = max(witnessed_cube_collection.red, minimal_red)
