@@ -117,6 +117,9 @@ def parse_schematic(lines: Iterable[str]) -> Iterator[Union[PartNumber, GearRati
             if symbol.intersects(number):
                 if not number.is_part_number:
                     number.flag_as_part_number()
+                    if not candidate_numbers:
+                        yield PartNumber(number.value)
+                        number.flag_as_yielded()
                 symbol.associate_with_part_number(number)
             else:
                 assert not symbol.is_after(number)
