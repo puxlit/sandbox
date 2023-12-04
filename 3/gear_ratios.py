@@ -6,6 +6,7 @@
 ########################################################################################################################
 
 from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
 from typing import NamedTuple, Optional, Union
 
 
@@ -48,19 +49,29 @@ GEAR_SYMBOL = '*'
 VALID_SYMBOLS = {'#', '$', '%', '&', GEAR_SYMBOL, '+', '-', '/', '=', '@'}
 
 
-class Number(NamedTuple):
+@dataclass
+class Number:
     value: int
     aabb: AABB
-    is_part_number: bool
+    is_part_number: bool = False
+    is_yielded: bool = False
 
-    def as_part_number(self) -> 'Number':
+    def flag_as_part_number(self) -> None:
         assert not self.is_part_number
-        return Number(self.value, self.aabb, True)
+        self.is_part_number = True
+
+    def flag_as_yielded(self) -> None:
+        assert self.is_part_number
+        assert not self.is_yielded
+        self.is_yielded = True
 
 
-class Symbol(NamedTuple):
+@dataclass
+class Symbol:
     value: str
     point: Point
+    num_adjacent_part_numbers: int = 0
+    gear_ratio: int = 1
 
     def intersects(self, number: Number) -> bool:
         return self.point.intersects(number.aabb)
@@ -70,6 +81,13 @@ class Symbol(NamedTuple):
 
     def is_after(self, number: Number) -> bool:
         return self.point.is_after(number.aabb)
+
+    def is_gear(self) -> bool:
+        return (self.value == GEAR_SYMBOL) and (self.num_adjacent_part_numbers == 2)
+
+    def associate_with_part_number(self, number: Number) -> None:
+        self.num_adjacent_part_numbers += 1
+        self.gear_ratio *= number.value
 
 
 class PartNumber(NamedTuple):
@@ -91,43 +109,41 @@ def parse_schematic(lines: Iterable[str]) -> Iterator[Union[PartNumber, GearRati
             if symbol.is_before(number):
                 # The new number's AABB is well after this symbol, so this symbol cannot possibly intersect with any
                 # future number's AABB.
+                assert i == 0
+                if symbol.is_gear():
+                    yield GearRatio(symbol.gear_ratio)
                 del candidate_symbols[i]
-            elif symbol.intersects(number):
-                if not candidate_numbers:
-                    yield PartNumber(number.value)
-                else:
-                    candidate_numbers.append(number.as_part_number())
-                return
+                continue
+            if symbol.intersects(number):
+                if not number.is_part_number:
+                    number.flag_as_part_number()
+                symbol.associate_with_part_number(number)
             else:
                 assert not symbol.is_after(number)
-                i += 1
+            i += 1
         candidate_numbers.append(number)
 
     def handle_new_symbol(symbol: Symbol) -> Iterator[Union[PartNumber, GearRatio]]:
         i = 0
         while i < len(candidate_numbers):
             number = candidate_numbers[i]
-            if number.is_part_number:
-                if i == 0:
-                    yield PartNumber(number.value)
-                    del candidate_numbers[i]
-                else:
-                    assert not symbol.is_after(number)
-                    i += 1
-            elif symbol.is_after(number):
+            if symbol.is_after(number):
                 # This number's AABB is well before the new symbol, and cannot possibly be a part number anymore.
                 assert i == 0
-                assert not number.is_part_number
-                del candidate_numbers[i]
-            elif symbol.intersects(number):
-                if i == 0:
+                if number.is_part_number and not number.is_yielded:
                     yield PartNumber(number.value)
-                    del candidate_numbers[i]
-                else:
-                    candidate_numbers[i] = number.as_part_number()
-                    i += 1
+                del candidate_numbers[i]
+                continue
+            if symbol.intersects(number):
+                if not number.is_part_number:
+                    number.flag_as_part_number()
+                    if i == 0:
+                        yield PartNumber(number.value)
+                        number.flag_as_yielded()
+                symbol.associate_with_part_number(number)
             else:
-                i += 1
+                assert not symbol.is_before(number)
+            i += 1
         # Save this symbol for any future numbers' AABB it might intersect with.
         candidate_symbols.append(symbol)
 
@@ -175,7 +191,7 @@ def parse_schematic(lines: Iterable[str]) -> Iterator[Union[PartNumber, GearRati
         # schematic.
         min_ = Point(start_pos.x - 1, start_pos.y - 1)
         max_ = Point(exclusive_end_pos.x, exclusive_end_pos.y + 1)
-        yield from handle_new_number(Number(number, AABB(min_, max_), False))
+        yield from handle_new_number(Number(number, AABB(min_, max_)))
         partial_number = None
 
     for (y, line) in enumerate(lines):
@@ -197,10 +213,12 @@ def parse_schematic(lines: Iterable[str]) -> Iterator[Union[PartNumber, GearRati
             else:
                 raise ValueError(f'Unexpected character {char!r} at line {y + 1}, column {x + 1}')
         yield from finish_number(Point(x + 1, y))
-    # Hack to flush out any remaining part numbers.
+    # Hack to flush out any remaining part numbers and symbols.
     # TODO: Add unit test.
     yield from handle_new_symbol(Symbol('#', Point(x + 2, y + 2)))
     assert not candidate_numbers
+    yield from handle_new_number(Number(0, AABB(Point(x + 2, y + 3), Point(x + 4, y + 5))))
+    assert not candidate_symbols
 
 
 ########################################################################################################################
@@ -248,6 +266,11 @@ def extract_part_numbers(lines: Iterable[str]) -> Iterator[int]:
     ...     '6.7.8'
     ... ]))
     [1, 2, 3, 4, 5, 6, 7, 8]
+    >>> list(extract_part_numbers([
+    ...     '#.$',
+    ...     '.1.',
+    ... ]))
+    [1]
     """
     part_numbers = filter(lambda x: isinstance(x, PartNumber), parse_schematic(lines))
     return map(lambda x: x.value, part_numbers)
@@ -297,6 +320,16 @@ def extract_gear_ratios(lines: Iterable[str]) -> Iterator[int]:
     ...     '.....#.5...#...13',
     ... ]))
     [15]
+    >>> list(extract_gear_ratios([
+    ...     '.2',
+    ...     '3*',
+    ... ]))
+    [6]
+    >>> list(extract_gear_ratios([
+    ...     '*2',
+    ...     '3.',
+    ... ]))
+    [6]
     """
     gear_ratios = filter(lambda x: isinstance(x, GearRatio), parse_schematic(lines))
     return map(lambda x: x.value, gear_ratios)
