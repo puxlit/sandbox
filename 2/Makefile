@@ -6,8 +6,8 @@ all: part_1_answer.txt part_2_answer.txt
 
 .SUFFIXES:
 
-check: cubes.py
-	python3 -m doctest -v cubes.py
+check: cube_conundrum.py
+	python3 -m doctest -v cube_conundrum.py
 
 clean:
 	rm -f part_1_answer.txt part_2_answer.txt
@@ -18,10 +18,10 @@ clobber: clean
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/2/input'
 
-part_1_answer.txt: cubes.py input.txt
-	python3 cubes.py 1 input.txt >$@
+part_1_answer.txt: cube_conundrum.py input.txt
+	python3 cube_conundrum.py 1 input.txt >$@
 
-part_2_answer.txt: cubes.py input.txt
-	python3 cubes.py 2 input.txt >$@
+part_2_answer.txt: cube_conundrum.py input.txt
+	python3 cube_conundrum.py 2 input.txt >$@
 
 .PHONY: all check clean clobber
