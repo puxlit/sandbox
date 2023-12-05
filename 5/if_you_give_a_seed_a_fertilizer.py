@@ -119,6 +119,18 @@ class Map(NamedTuple):
         [(Range(min_inclusive=5, max_exclusive=10), Range(min_inclusive=5, max_exclusive=10))]
         >>> list(map_.transpose_range(Range(5, 11)))
         [(Range(min_inclusive=5, max_exclusive=10), Range(min_inclusive=5, max_exclusive=10)), (Range(min_inclusive=10, max_exclusive=11), Range(min_inclusive=100, max_exclusive=101))]
+        >>> list(map_.transpose_range(Range(44, 50)))
+        [(Range(min_inclusive=44, max_exclusive=45), Range(min_inclusive=309, max_exclusive=310)), (Range(min_inclusive=45, max_exclusive=50), Range(min_inclusive=45, max_exclusive=50))]
+        >>> list(map_.transpose_range(Range(45, 50)))
+        [(Range(min_inclusive=45, max_exclusive=50), Range(min_inclusive=45, max_exclusive=50))]
+        >>> list(map_.transpose_range(Range(46, 50)))
+        [(Range(min_inclusive=46, max_exclusive=50), Range(min_inclusive=46, max_exclusive=50))]
+        >>> list(map_.transpose_range(Range(31, 34)))
+        [(Range(min_inclusive=31, max_exclusive=34), Range(min_inclusive=31, max_exclusive=34))]
+        >>> list(map_.transpose_range(Range(30, 35)))
+        [(Range(min_inclusive=30, max_exclusive=35), Range(min_inclusive=30, max_exclusive=35))]
+        >>> list(map_.transpose_range(Range(29, 36)))
+        [(Range(min_inclusive=29, max_exclusive=30), Range(min_inclusive=209, max_exclusive=210)), (Range(min_inclusive=30, max_exclusive=35), Range(min_inclusive=30, max_exclusive=35)), (Range(min_inclusive=35, max_exclusive=36), Range(min_inclusive=300, max_exclusive=301))]
         """
         # TODO: mapping isn't guaranteed to be bijective. At the very least, we should check that the destination ranges
         # don't overlap.
