@@ -13,7 +13,7 @@ from typing import Any, NamedTuple, Optional
 
 
 ########################################################################################################################
-# Part 1
+# Almanac
 ########################################################################################################################
 
 @dataclass(frozen=True)
@@ -103,6 +103,41 @@ class Map(NamedTuple):
             if source_number in source_range:
                 return source_number - source_range.min_inclusive + destination_range_start
         return source_number
+
+    def transpose_range(self, range_: Range) -> Iterator[tuple[Range, Range]]:
+        """
+        >>> map_ = Map.from_lines(iter([
+        ...     '100 10 10',
+        ...     '200 20 10',
+        ...     '300 35 10',
+        ... ]))
+        >>> list(map_.transpose_range(Range(5, 50)))
+        [(Range(min_inclusive=5, max_exclusive=10), Range(min_inclusive=5, max_exclusive=10)), (Range(min_inclusive=10, max_exclusive=20), Range(min_inclusive=100, max_exclusive=110)), (Range(min_inclusive=20, max_exclusive=30), Range(min_inclusive=200, max_exclusive=210)), (Range(min_inclusive=30, max_exclusive=35), Range(min_inclusive=30, max_exclusive=35)), (Range(min_inclusive=35, max_exclusive=45), Range(min_inclusive=300, max_exclusive=310)), (Range(min_inclusive=45, max_exclusive=50), Range(min_inclusive=45, max_exclusive=50))]
+        >>> list(map_.transpose_range(Range(5, 9)))
+        [(Range(min_inclusive=5, max_exclusive=9), Range(min_inclusive=5, max_exclusive=9))]
+        >>> list(map_.transpose_range(Range(5, 10)))
+        [(Range(min_inclusive=5, max_exclusive=10), Range(min_inclusive=5, max_exclusive=10))]
+        >>> list(map_.transpose_range(Range(5, 11)))
+        [(Range(min_inclusive=5, max_exclusive=10), Range(min_inclusive=5, max_exclusive=10)), (Range(min_inclusive=10, max_exclusive=11), Range(min_inclusive=100, max_exclusive=101))]
+        """
+        # TODO: mapping isn't guaranteed to be bijective. At the very least, we should check that the destination ranges
+        # don't overlap.
+        range_start = range_.min_inclusive
+        range_end = range_.max_exclusive
+        for (source_range, destination_range_start) in self.transpositions:
+            if range_start < source_range.min_inclusive:
+                if range_end <= source_range.min_inclusive:
+                    yield (Range(range_start, range_end), Range(range_start, range_end))
+                    return
+                yield (Range(range_start, source_range.min_inclusive), Range(range_start, source_range.min_inclusive))
+                range_start = source_range.min_inclusive
+            if range_start in source_range:
+                if range_end <= source_range.max_exclusive:
+                    yield (Range(range_start, range_end), Range(range_start - source_range.min_inclusive + destination_range_start, range_end - source_range.min_inclusive + destination_range_start))
+                    return
+                yield (Range(range_start, source_range.max_exclusive), Range(range_start - source_range.min_inclusive + destination_range_start, source_range.max_exclusive - source_range.min_inclusive + destination_range_start))
+                range_start = source_range.max_exclusive
+        yield (Range(range_start, range_end), Range(range_start, range_end))
 
 
 MAP_HEADER_PATTERN = re.compile(r'^([a-z]+)-to-([a-z]+) map:$')
@@ -197,6 +232,20 @@ class Almanac(NamedTuple):
             (source_category, source_number) = (destination_category, destination_number)
         return category_numbers
 
+    def hydrate_range(self, initial_category: str, initial_range: Range) -> Iterator[dict[str, Range]]:
+        (destination_category, map_) = self.maps[initial_category]
+        if destination_category in self.maps:
+            for (source_range, destination_range) in map_.transpose_range(initial_range):
+                for partial_hydration in self.hydrate_range(destination_category, destination_range):
+                    yield {initial_category: source_range, **partial_hydration}
+        else:
+            for (source_range, destination_range) in map_.transpose_range(initial_range):
+                yield {initial_category: source_range, destination_category: destination_range}
+
+
+########################################################################################################################
+# Part 1
+########################################################################################################################
 
 INITIAL_SEEDS_HEADER = 'seeds: '
 
@@ -264,6 +313,102 @@ def find_lowest_location_number(lines: Iterator[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def pairs(iterator: Iterator[int]) -> Iterator[tuple[int, int]]:
+    """
+    >>> list(pairs(iter([])))
+    []
+    >>> list(pairs(iter([1, 2, 3, 4, 5, 6])))
+    [(1, 2), (3, 4), (5, 6)]
+    >>> list(pairs(iter([1, 2, 3, 4, 5])))
+    Traceback (most recent call last):
+        ...
+    ValueError: First value 5 is missing its second value
+    """
+    while True:
+        try:
+            first = next(iterator)
+        except StopIteration:
+            return
+        try:
+            second = next(iterator)
+        except StopIteration:
+            raise ValueError(f'First value {first} is missing its second value')
+        yield (first, second)
+
+
+def parse_initial_seed_ranges(line: str) -> Iterator[Range]:
+    """
+    >>> list(parse_initial_seed_ranges('seeds: 79 14 55 13'))
+    [Range(min_inclusive=79, max_exclusive=93), Range(min_inclusive=55, max_exclusive=68)]
+    >>> list(parse_initial_seed_ranges('samen: 69 420'))
+    Traceback (most recent call last):
+        ...
+    ValueError: Initial seeds line 'samen: 69 420' does not start with expected header 'seeds: '
+    >>> list(parse_initial_seed_ranges('seeds: 69'))
+    Traceback (most recent call last):
+        ...
+    ValueError: First value 69 is missing its second value
+    """
+    if not line.startswith(INITIAL_SEEDS_HEADER):
+        raise ValueError(f'Initial seeds line {line!r} does not start with '
+                         f'expected header {INITIAL_SEEDS_HEADER!r}')
+    line = line.removeprefix(INITIAL_SEEDS_HEADER)
+    for (range_start, range_length) in pairs(int(x) for x in line.split(NUMBER_DELIMITER)):
+        yield Range(range_start, range_start + range_length)
+
+
+def find_lowest_location_number_ex(lines: Iterator[str]) -> int:
+    """
+    >>> find_lowest_location_number_ex(iter([
+    ...     'seeds: 79 14 55 13',
+    ...     '',
+    ...     'seed-to-soil map:',
+    ...     '50 98 2',
+    ...     '52 50 48',
+    ...     '',
+    ...     'soil-to-fertilizer map:',
+    ...     '0 15 37',
+    ...     '37 52 2',
+    ...     '39 0 15',
+    ...     '',
+    ...     'fertilizer-to-water map:',
+    ...     '49 53 8',
+    ...     '0 11 42',
+    ...     '42 0 7',
+    ...     '57 7 4',
+    ...     '',
+    ...     'water-to-light map:',
+    ...     '88 18 7',
+    ...     '18 25 70',
+    ...     '',
+    ...     'light-to-temperature map:',
+    ...     '45 77 23',
+    ...     '81 45 19',
+    ...     '68 64 13',
+    ...     '',
+    ...     'temperature-to-humidity map:',
+    ...     '0 69 1',
+    ...     '1 0 69',
+    ...     '',
+    ...     'humidity-to-location map:',
+    ...     '60 56 37',
+    ...     '56 93 4',
+    ... ]))
+    46
+    """
+    initial_seed_ranges = parse_initial_seed_ranges(next(lines))
+    if next(lines):
+        raise ValueError('Expected blank line')
+    almanac = Almanac.from_lines(lines)
+    return min(category_ranges['location'].min_inclusive
+               for seed_range in initial_seed_ranges
+               for category_ranges in almanac.hydrate_range('seed', seed_range))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -278,6 +423,8 @@ def main() -> None:
 
     if args.part == 1:
         print(find_lowest_location_number(lines))
+    if args.part == 2:
+        print(find_lowest_location_number_ex(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
