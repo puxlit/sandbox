@@ -435,7 +435,7 @@ def main() -> None:
 
     if args.part == 1:
         print(find_lowest_location_number(lines))
-    if args.part == 2:
+    elif args.part == 2:
         print(find_lowest_location_number_ex(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
