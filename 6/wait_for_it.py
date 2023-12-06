@@ -103,6 +103,47 @@ def calculate_product_of_margins_of_error(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def parse_poorly_kerned_race_info(lines: Iterator[str]) -> RaceInfo:
+    """
+    >>> parse_poorly_kerned_race_info(iter([
+    ...     'Time:      7  15   30',
+    ...     'Distance:  9  40  200',
+    ... ]))
+    RaceInfo(time_allowed_ms=71530, best_distance_mm=940200)
+    """
+    line = next(lines)
+    if not line.startswith(TIMES_ALLOWED_MS_HEADER_PREFIX):
+        raise ValueError(f'Times allowed (ms) line {line!r} does not start with '
+                         f'expected prefix {TIMES_ALLOWED_MS_HEADER_PREFIX!r}')
+    time_allowed_ms = int(line.removeprefix(TIMES_ALLOWED_MS_HEADER_PREFIX).replace(' ', ''))
+    line = next(lines)
+    if not line.startswith(BEST_DISTANCES_MM_HEADER_PREFIX):
+        raise ValueError(f'Best distances (mm) line {line!r} does not start with '
+                         f'expected prefix {BEST_DISTANCES_MM_HEADER_PREFIX!r}')
+    best_distance_mm = int(line.removeprefix(BEST_DISTANCES_MM_HEADER_PREFIX).replace(' ', ''))
+    try:
+        line = next(lines)
+        raise ValueError(f'Unexpected line {line!r}')
+    except StopIteration:
+        pass
+    return RaceInfo(time_allowed_ms, best_distance_mm)
+
+
+def calculate_margin_of_error(lines: Iterable[str]) -> int:
+    """
+    >>> calculate_margin_of_error([
+    ...     'Time:      7  15   30',
+    ...     'Distance:  9  40  200',
+    ... ])
+    71503
+    """
+    return parse_poorly_kerned_race_info(iter(lines)).calculate_margin_of_error()
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -117,6 +158,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_product_of_margins_of_error(lines))
+    elif args.part == 2:
+        print(calculate_margin_of_error(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
