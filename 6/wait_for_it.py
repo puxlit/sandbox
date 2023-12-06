@@ -49,10 +49,14 @@ class RaceInfo(NamedTuple):
         9
         """
         discriminant = self.time_allowed_ms**2 - (4 * (self.best_distance_mm / CHARGING_MM_PER_MS_PER_MS))
-        assert discriminant >= 0  # There should be one or two real solutions.
+        # There should be two real roots, otherwise it's not possible for there to be any integer solutions.
+        assert discriminant > 0
         sqrt_discriminant = sqrt(discriminant)
         smaller_root = (self.time_allowed_ms - sqrt_discriminant) / 2
         larger_root = (self.time_allowed_ms + sqrt_discriminant) / 2
+        # Note that we're looking for integer solutions _below_ the x-intercept. This means that when the roots are
+        # integers (e.g. 10 and 20), the first and last integer solutions would be the next biggest and smallest
+        # integers respectively (i.e. 11 and 19).
         smaller_solution = ceil(smaller_root) if smaller_root != int(smaller_root) else int(smaller_root) + 1
         larger_solution = floor(larger_root) if larger_root != int(larger_root) else int(larger_root) - 1
         assert smaller_solution <= larger_solution
