@@ -15,7 +15,7 @@ from typing import Any, cast
 
 
 ########################################################################################################################
-# Part 1
+# Cards
 ########################################################################################################################
 
 @total_ordering
@@ -33,6 +33,7 @@ class Card(Enum):
     FOUR = '4'
     THREE = '3'
     TWO = '2'
+    JOKER = 'j'
     _ignore_ = ['_STRENGTH']
     _STRENGTH: dict['Card', int]
 
@@ -56,6 +57,7 @@ Card._STRENGTH = {
     Card.FOUR: 2,
     Card.THREE: 1,
     Card.TWO: 0,
+    Card.JOKER: -1,
 }
 
 
@@ -75,7 +77,7 @@ class HandType(Enum):
         raise TypeError(f'Cannot evaluate `{self!r} < {other!r}`')
 
 
-HAND_LINE_PATTERN = re.compile(r'^([2-9AJKQT]{5}) ([1-9][0-9]*)$')
+HAND_LINE_PATTERN = re.compile(r'^([2-9AJKQTj]{5}) ([1-9][0-9]*)$')
 
 
 @dataclass(order=True, frozen=True)
@@ -88,20 +90,37 @@ class Hand:
     @classmethod
     def from_line(cls, line: str) -> 'Hand':
         """
-        >>> Hand.from_line('AAAAA 1').type_.name
-        'FIVE_OF_A_KIND'
-        >>> Hand.from_line('AA8AA 1').type_.name
-        'FOUR_OF_A_KIND'
-        >>> Hand.from_line('23332 1').type_.name
-        'FULL_HOUSE'
-        >>> Hand.from_line('TTT98 1').type_.name
-        'THREE_OF_A_KIND'
-        >>> Hand.from_line('23432 1').type_.name
-        'TWO_PAIR'
-        >>> Hand.from_line('A23A4 1').type_.name
-        'ONE_PAIR'
-        >>> Hand.from_line('23456 1').type_.name
-        'HIGH_CARD'
+        >>> assert Hand.from_line('AAAAA 1').type_ == HandType.FIVE_OF_A_KIND
+        >>> assert Hand.from_line('AA8AA 1').type_ == HandType.FOUR_OF_A_KIND
+        >>> assert Hand.from_line('23332 1').type_ == HandType.FULL_HOUSE
+        >>> assert Hand.from_line('TTT98 1').type_ == HandType.THREE_OF_A_KIND
+        >>> assert Hand.from_line('23432 1').type_ == HandType.TWO_PAIR
+        >>> assert Hand.from_line('A23A4 1').type_ == HandType.ONE_PAIR
+        >>> assert Hand.from_line('23456 1').type_ == HandType.HIGH_CARD
+
+        >>> (a, b) = (Hand.from_line('33332 1'), Hand.from_line('2AAAA 1'))
+        >>> assert a.type_ == b.type_ == HandType.FOUR_OF_A_KIND
+        >>> assert a > b
+        >>> (a, b) = (Hand.from_line('77888 1'), Hand.from_line('77788 1'))
+        >>> assert a.type_ == b.type_ == HandType.FULL_HOUSE
+        >>> assert a > b
+
+        >>> assert Hand.from_line('32T3K 765').type_ == HandType.ONE_PAIR
+        >>> (a, b) = (Hand.from_line('KK677 28'), Hand.from_line('KTJJT 220'))
+        >>> assert a.type_ == b.type_ == HandType.TWO_PAIR
+        >>> assert a > b
+        >>> (a, b) = (Hand.from_line('T55J5 684'), Hand.from_line('QQQJA 483'))
+        >>> assert a.type_ == b.type_ == HandType.THREE_OF_A_KIND
+        >>> assert a < b
+
+        >>> assert Hand.from_line('QjjQ2 1').type_ == HandType.FOUR_OF_A_KIND
+        >>> (a, b) = (Hand.from_line('jKKK2 1'), Hand.from_line('QQQQ2 1'))
+        >>> assert a.type_ == b.type_ == HandType.FOUR_OF_A_KIND
+        >>> assert a < b
+
+        >>> (a, b, c) = (Hand.from_line('T55j5 684'), Hand.from_line('KTjjT 220'), Hand.from_line('QQQjA 483'))
+        >>> assert a.type_ == b.type_ == c.type_ == HandType.FOUR_OF_A_KIND
+        >>> assert a < c < b
         """
         match = HAND_LINE_PATTERN.fullmatch(line)
         if not match:
@@ -112,9 +131,13 @@ class Hand:
         cards = cast(tuple[Card, Card, Card, Card, Card], tuple(Card(card) for card in raw_cards))
         bid_amount = int(raw_bid_amount)
 
-        cards_by_frequency = Counter(cards).most_common()
-        assert len(cards_by_frequency) >= 1
-        mode_count = cards_by_frequency[0][1]
+        counter = Counter(cards)
+        joker_count = counter.get(Card.JOKER, 0)
+        del counter[Card.JOKER]
+        cards_by_frequency = counter.most_common()
+        mode_count = cards_by_frequency[0][1] if cards_by_frequency else 0
+        # Jokers should always be allocated to whatever's the most frequent card.
+        mode_count += joker_count
         if mode_count == 5:
             type_ = HandType.FIVE_OF_A_KIND
         elif mode_count == 4:
@@ -137,6 +160,10 @@ class Hand:
         return Hand(type_, cards, bid_amount)
 
 
+########################################################################################################################
+# Part 1
+########################################################################################################################
+
 def calculate_total_winnings(lines: Iterable[str]) -> int:
     """
     >>> calculate_total_winnings([
@@ -149,6 +176,26 @@ def calculate_total_winnings(lines: Iterable[str]) -> int:
     6440
     """
     hands = list(Hand.from_line(line) for line in lines)
+    ranked_hands = sorted(hands)  # We'll assume there are no ties.
+    return sum(hand.bid_amount * (i + 1) for (i, hand) in enumerate(ranked_hands))
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def calculate_total_winnings_with_joker_rule(lines: Iterable[str]) -> int:
+    """
+    >>> calculate_total_winnings_with_joker_rule([
+    ...     '32T3K 765',
+    ...     'T55J5 684',
+    ...     'KK677 28',
+    ...     'KTJJT 220',
+    ...     'QQQJA 483',
+    ... ])
+    5905
+    """
+    hands = list(Hand.from_line(line.replace(Card.JACK.value, Card.JOKER.value)) for line in lines)
     ranked_hands = sorted(hands)  # We'll assume there are no ties.
     return sum(hand.bid_amount * (i + 1) for (i, hand) in enumerate(ranked_hands))
 
@@ -168,6 +215,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_total_winnings(lines))
+    elif args.part == 2:
+        print(calculate_total_winnings_with_joker_rule(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
