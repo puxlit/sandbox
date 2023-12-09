@@ -74,6 +74,24 @@ def sum_extrapolated_next_values(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def sum_extrapolated_prev_values(lines: Iterable[str]) -> int:
+    """
+    >>> sum_extrapolated_prev_values([
+    ...     '0 3 6 9 12 15',
+    ...     '1 3 6 10 15 21',
+    ...     '10 13 16 21 30 45',
+    ... ])
+    2
+    """
+    histories = parse_oasis_report(lines)
+    reversed_histories = tuple(tuple(reversed(history)) for history in histories)
+    return sum(extrapolate_next_values(reversed_history, 1)[0] for reversed_history in reversed_histories)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -87,6 +105,8 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
+        print(sum_extrapolated_next_values(lines))
+    elif args.part == 2:
         print(sum_extrapolated_next_values(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
