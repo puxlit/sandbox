@@ -107,7 +107,7 @@ def main() -> None:
     if args.part == 1:
         print(sum_extrapolated_next_values(lines))
     elif args.part == 2:
-        print(sum_extrapolated_next_values(lines))
+        print(sum_extrapolated_prev_values(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
