@@ -11,15 +11,13 @@ from typing import NamedTuple
 
 
 ########################################################################################################################
-# Part 1
+# Star map
 ########################################################################################################################
 
 class Coordinate(NamedTuple):
     x: int
     y: int
 
-
-EXPANSION_FACTOR = 2
 
 EMPTY_SPACE = '.'
 GALAXY = '#'
@@ -32,7 +30,7 @@ class StarMap(NamedTuple):
     empty_rows: set[int]
 
     @classmethod
-    def from_lines(cls, lines: Iterable[str]) -> 'StarMap':
+    def from_lines(cls, lines: Iterable[str], expansion_factor: int) -> 'StarMap':
         width = -1
         galaxy_coordinates: set[Coordinate] = set()
         empty_columns_mask: list[bool] = []
@@ -62,8 +60,8 @@ class StarMap(NamedTuple):
         for galaxy_coordinate in galaxy_coordinates:
             columns_to_expand = len(list(x for x in empty_columns if x < galaxy_coordinate.x))
             rows_to_expand = len(list(y for y in empty_rows if y < galaxy_coordinate.y))
-            x_delta = (columns_to_expand * EXPANSION_FACTOR) - columns_to_expand
-            y_delta = (rows_to_expand * EXPANSION_FACTOR) - rows_to_expand
+            x_delta = (columns_to_expand * expansion_factor) - columns_to_expand
+            y_delta = (rows_to_expand * expansion_factor) - rows_to_expand
             expanded_galaxy_coordinates.add(Coordinate(galaxy_coordinate.x + x_delta, galaxy_coordinate.y + y_delta))
 
         return StarMap(galaxy_coordinates, expanded_galaxy_coordinates, empty_columns, empty_rows)
@@ -73,7 +71,7 @@ def manhattan_distance(a: Coordinate, b: Coordinate) -> int:
     return abs(a.x - b.x) + abs(a.y - b.y)
 
 
-def sum_shortest_path_between_galaxy_pairs(lines: Iterable[str]) -> int:
+def sum_shortest_path_between_galaxy_pairs(lines: Iterable[str], expansion_factor: int) -> int:
     """
     >>> sum_shortest_path_between_galaxy_pairs([
     ...     '...#......',
@@ -86,12 +84,54 @@ def sum_shortest_path_between_galaxy_pairs(lines: Iterable[str]) -> int:
     ...     '..........',
     ...     '.......#..',
     ...     '#...#.....',
-    ... ])
+    ... ], 2)
     374
+    >>> sum_shortest_path_between_galaxy_pairs([
+    ...     '...#......',
+    ...     '.......#..',
+    ...     '#.........',
+    ...     '..........',
+    ...     '......#...',
+    ...     '.#........',
+    ...     '.........#',
+    ...     '..........',
+    ...     '.......#..',
+    ...     '#...#.....',
+    ... ], 10)
+    1030
+    >>> sum_shortest_path_between_galaxy_pairs([
+    ...     '...#......',
+    ...     '.......#..',
+    ...     '#.........',
+    ...     '..........',
+    ...     '......#...',
+    ...     '.#........',
+    ...     '.........#',
+    ...     '..........',
+    ...     '.......#..',
+    ...     '#...#.....',
+    ... ], 100)
+    8410
     """
-    star_map = StarMap.from_lines(lines)
+    star_map = StarMap.from_lines(lines, expansion_factor)
     galaxy_pairs = combinations(star_map.expanded_galaxy_coordinates, 2)
     return sum(map(lambda pair: manhattan_distance(*pair), galaxy_pairs))
+
+
+########################################################################################################################
+# Part 1
+########################################################################################################################
+
+def sum_shortest_path_between_galaxy_pairs_with_two_times_expansion(lines: Iterable[str]) -> int:
+    return sum_shortest_path_between_galaxy_pairs(lines, 2)
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def sum_shortest_path_between_galaxy_pairs_with_million_times_expansion(lines: Iterable[str]) -> int:
+    return sum_shortest_path_between_galaxy_pairs(lines, 1_000_000)
 
 
 ########################################################################################################################
@@ -108,7 +148,9 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(sum_shortest_path_between_galaxy_pairs(lines))
+        print(sum_shortest_path_between_galaxy_pairs_with_two_times_expansion(lines))
+    elif args.part == 2:
+        print(sum_shortest_path_between_galaxy_pairs_with_million_times_expansion(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
