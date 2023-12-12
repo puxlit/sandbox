@@ -49,7 +49,7 @@ class Spring(NamedTuple):
         >>> str(Spring.from_line('???.### 1,1,3').simplify())
         '??? 1,1'
         >>> str(Spring.from_line('.??..??...?##. 1,1,3').simplify())
-        '??.??.? 1,1,1'
+        '??.?? 1,1'
         >>> str(Spring.from_line('?#?#?#?#?#?#?#? 1,3,1,6').simplify())
         '?#?#?#?#?#?#?#? 1,3,1,6'
         >>> str(Spring.from_line('????.#...#... 4,1,1').simplify())
@@ -60,6 +60,9 @@ class Spring(NamedTuple):
         '?###???????? 3,2,1'
 
         With more analysis, the last example could be simplified further to '???????? 2,1'.
+
+        >>> str(Spring.from_line('#..#?#?.?????#.# 1,1,2,5,1').simplify())
+        '? -1'
         """
         # Collapse contiguous runs of operational condition reports; they're only useful as sentinels (to delimit
         # contiguous runs of damaged condition reports), so their run length is irrelevant.
@@ -72,20 +75,19 @@ class Spring(NamedTuple):
 
         while condition_records:
             in_run = bool(damaged_contiguous_run_lengths) and (damaged_contiguous_run_lengths[0] < 0)
-            if not in_run:
-                # Trim leading and trailing operational condition reports.
-                if condition_records[0] == ConditionRecord.OPERATIONAL:
-                    condition_records.pop(0)
-                    continue
-                if condition_records[-1] == ConditionRecord.OPERATIONAL:
-                    condition_records.pop()
-                    continue
+            # Trim leading and trailing operational condition reports.
+            if not in_run and condition_records[0] == ConditionRecord.OPERATIONAL:
+                condition_records.pop(0)
+                continue
+            if condition_records[-1] == ConditionRecord.OPERATIONAL:
+                condition_records.pop()
+                continue
             # Trim leading and trailing damaged condition reports.
             if damaged_contiguous_run_lengths:
                 if condition_records[0] == ConditionRecord.DAMAGED:
                     leading_damaged_contiguous_run_length = abs(damaged_contiguous_run_lengths[0])
                     if leading_damaged_contiguous_run_length > 1:
-                        if not (len(condition_records) >= leading_damaged_contiguous_run_length) and (condition_records[1] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN}):
+                        if not ((len(condition_records) >= leading_damaged_contiguous_run_length) and (condition_records[1] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN})):
                             break
                         condition_records.pop(0)
                         damaged_contiguous_run_lengths[0] = -(leading_damaged_contiguous_run_length - 1)
@@ -99,19 +101,18 @@ class Spring(NamedTuple):
                         continue
                 if condition_records[-1] == ConditionRecord.DAMAGED:
                     trailing_damaged_contiguous_run_length = abs(damaged_contiguous_run_lengths[-1])
-                    if trailing_damaged_contiguous_run_length > 1:
-                        if not (len(condition_records) >= trailing_damaged_contiguous_run_length) and (condition_records[-2] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN}):
+                    if len(condition_records) < trailing_damaged_contiguous_run_length:
+                        break
+                    if len(condition_records) > trailing_damaged_contiguous_run_length:
+                        if condition_records[-(trailing_damaged_contiguous_run_length + 1)] not in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN}:
                             break
+                    if any(condition_records[i] not in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN} for i in range(-2, -(trailing_damaged_contiguous_run_length + 1), -1)):
+                        break
+                    condition_records = condition_records[:-trailing_damaged_contiguous_run_length]
+                    if condition_records:
                         condition_records.pop()
-                        damaged_contiguous_run_lengths[-1] = (-1 if damaged_contiguous_run_lengths[-1] < 0 else 1) * (trailing_damaged_contiguous_run_length - 1)
-                        continue
-                    elif trailing_damaged_contiguous_run_length == 1:
-                        if not (((len(condition_records) > 1) and (condition_records[-2] in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN})) or (len(condition_records) == 1)):
-                            break
-                        condition_records.pop()
-                        condition_records.pop()
-                        damaged_contiguous_run_lengths.pop()
-                        continue
+                    damaged_contiguous_run_lengths.pop()
+                    continue
             # We've exhausted our simple optimisations! :)
             break
 
@@ -146,6 +147,11 @@ class Spring(NamedTuple):
         11
         >>> Spring.from_line('????.????????????. 2,3,1,1,1').count_arrangements()
         106
+
+        Thanks Doru. <3 <https://discord.com/channels/246075715714416641/1180276776858026086/1184203218268455012>
+
+        >>> Spring.from_line('#..#?#?.?????#.# 1,1,2,5,1').count_arrangements()
+        1
         """
         simplified_spring = self.simplify()
 
