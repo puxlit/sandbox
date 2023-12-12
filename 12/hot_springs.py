@@ -87,7 +87,7 @@ class Spring(NamedTuple):
                         if not (len(condition_records) >= leading_damaged_contiguous_run_length) and (condition_records[1] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN}):
                             break
                         condition_records.pop(0)
-                        damaged_contiguous_run_lengths[0] = (-1 if in_run else 1) * (leading_damaged_contiguous_run_length - 1)
+                        damaged_contiguous_run_lengths[0] = -(leading_damaged_contiguous_run_length - 1)
                         continue
                     elif leading_damaged_contiguous_run_length == 1:
                         if not (((len(condition_records) > 1) and (condition_records[1] in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN})) or (len(condition_records) == 1)):
@@ -97,13 +97,12 @@ class Spring(NamedTuple):
                         damaged_contiguous_run_lengths.pop(0)
                         continue
                 if condition_records[-1] == ConditionRecord.DAMAGED:
-                    trailing_damaged_contiguous_run_length = damaged_contiguous_run_lengths[-1]
-                    assert trailing_damaged_contiguous_run_length > 0
+                    trailing_damaged_contiguous_run_length = abs(damaged_contiguous_run_lengths[-1])
                     if trailing_damaged_contiguous_run_length > 1:
                         if not (len(condition_records) >= trailing_damaged_contiguous_run_length) and (condition_records[-2] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN}):
                             break
                         condition_records.pop()
-                        damaged_contiguous_run_lengths[-1] = trailing_damaged_contiguous_run_length - 1
+                        damaged_contiguous_run_lengths[-1] = (-1 if damaged_contiguous_run_lengths[-1] < 0 else 1) * (trailing_damaged_contiguous_run_length - 1)
                         continue
                     elif trailing_damaged_contiguous_run_length == 1:
                         if not (((len(condition_records) > 1) and (condition_records[-2] in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN})) or (len(condition_records) == 1)):
@@ -131,6 +130,9 @@ class Spring(NamedTuple):
         4
         >>> Spring.from_line('?###???????? 3,2,1').count_arrangements()
         10
+
+        >>> Spring.from_line('#????.#.#..?? 3,1,1,1').count_arrangements()
+        3
         """
         simplified_spring = self.simplify()
 
