@@ -5,15 +5,15 @@
 # Imports
 ########################################################################################################################
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from enum import Enum
 from itertools import chain, groupby
-# from math import factorial
+from math import factorial
 from typing import NamedTuple
 
 
 ########################################################################################################################
-# Star map
+# Part 1
 ########################################################################################################################
 
 REPORT_FORMAT_DELIMITER = ' '
@@ -152,6 +152,19 @@ class Spring(NamedTuple):
 
         >>> Spring.from_line('#..#?#?.?????#.# 1,1,2,5,1').count_arrangements()
         1
+
+        >>> Spring.from_line('???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3').count_arrangements()
+        1
+        >>> Spring.from_line('.??..??...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##. 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3').count_arrangements()
+        16384
+        >>> Spring.from_line('?#?#?#?#?#?#?#???#?#?#?#?#?#?#???#?#?#?#?#?#?#???#?#?#?#?#?#?#???#?#?#?#?#?#?#? 1,3,1,6,1,3,1,6,1,3,1,6,1,3,1,6,1,3,1,6').count_arrangements()
+        1
+        >>> Spring.from_line('????.#...#...?????.#...#...?????.#...#...?????.#...#...?????.#...#... 4,1,1,4,1,1,4,1,1,4,1,1,4,1,1').count_arrangements()
+        16
+        >>> Spring.from_line('????.######..#####.?????.######..#####.?????.######..#####.?????.######..#####.?????.######..#####. 1,6,5,1,6,5,1,6,5,1,6,5,1,6,5').count_arrangements()
+        2500
+        >>> Spring.from_line('?###??????????###??????????###??????????###??????????###???????? 3,2,1,3,2,1,3,2,1,3,2,1,3,2,1').count_arrangements()
+        506250
         """
         simplified_spring = self.simplify()
 
@@ -178,31 +191,35 @@ class Spring(NamedTuple):
             # This only happens if the simplification process encountered an invalid arrangement
             return 0
 
-        # if all(condition_record == ConditionRecord.UNKNOWN for condition_record in simplified_spring.condition_records):
-            # # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths of damaged
-            # # condition reports as `###.##.##.#.#`. We have four unknown condition reports left over, which we can
-            # # distribute to any of the four operational condition reports or the ends.
-            # #
-            # # In other words, how can we pick six slots into groups of four, with replacement?
-            # n = len(simplified_spring.damaged_contiguous_run_lengths) + 1
-            # k = num_condition_records - sum(simplified_spring.damaged_contiguous_run_lengths) - (len(simplified_spring.damaged_contiguous_run_lengths) - 1)
-            # assert n >= k >= 0
-            # return factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
-
         in_run = simplified_spring.damaged_contiguous_run_lengths[0] < 0
+
+        if not in_run and all(condition_record == ConditionRecord.UNKNOWN for condition_record in simplified_spring.condition_records):
+            if len(simplified_spring.damaged_contiguous_run_lengths) > 1:
+                # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths of
+                # damaged condition reports as `###.##.##.#.#`. We have four unknown condition reports left over, which
+                # we can distribute to any of the four operational condition reports or the ends.
+                #
+                # In other words, how can we pick six slots into groups of four, with replacement?
+                n = len(simplified_spring.damaged_contiguous_run_lengths) + 1
+                k = num_condition_records - sum(simplified_spring.damaged_contiguous_run_lengths) - (len(simplified_spring.damaged_contiguous_run_lengths) - 1)
+                if n >= k >= 0:
+                    return factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
+
         if in_run:
             operational_arrangements = 0
         else:
             operational_arrangements = Spring(simplified_spring.condition_records[1:], simplified_spring.damaged_contiguous_run_lengths).count_arrangements()
-        damaged_arrangements = 0
         damaged_contiguous_run_length = abs(simplified_spring.damaged_contiguous_run_lengths[0])
-        if (damaged_contiguous_run_length > 1) and (num_condition_records >= damaged_contiguous_run_length) and (simplified_spring.condition_records[1] in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN}):
-            damaged_arrangements = Spring(simplified_spring.condition_records[1:], (-(damaged_contiguous_run_length - 1),) + simplified_spring.damaged_contiguous_run_lengths[1:]).count_arrangements()
-        elif damaged_contiguous_run_length == 1:
-            if (num_condition_records >= 2) and (simplified_spring.condition_records[1] in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN}):
-                damaged_arrangements = Spring(simplified_spring.condition_records[2:], simplified_spring.damaged_contiguous_run_lengths[1:]).count_arrangements()
-            elif num_condition_records == 1:
-                damaged_arrangements = 1 if len(simplified_spring.damaged_contiguous_run_lengths) == 1 else 0
+        assert num_condition_records >= damaged_contiguous_run_length
+        if num_condition_records > damaged_contiguous_run_length:
+            if simplified_spring.condition_records[damaged_contiguous_run_length] not in {ConditionRecord.OPERATIONAL, ConditionRecord.UNKNOWN}:
+                return operational_arrangements
+        if any(simplified_spring.condition_records[i] not in {ConditionRecord.DAMAGED, ConditionRecord.UNKNOWN} for i in range(1, damaged_contiguous_run_length)):
+            return operational_arrangements
+        new_condition_records = simplified_spring.condition_records[damaged_contiguous_run_length:]
+        if new_condition_records:
+            new_condition_records = new_condition_records[1:]
+        damaged_arrangements = Spring(new_condition_records, simplified_spring.damaged_contiguous_run_lengths[1:]).count_arrangements()
         return operational_arrangements + damaged_arrangements
 
 
@@ -219,6 +236,37 @@ def sum_arrangements(lines: Iterable[str]) -> int:
     21
     """
     springs = (Spring.from_line(line) for line in lines)
+    return sum(map(lambda spring: spring.count_arrangements(), springs))
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+UNFOLD_FACTOR = 5
+
+
+def unfold_lines(lines: Iterable[str]) -> Iterator[str]:
+    for line in lines:
+        (raw_condition_records, raw_damaged_contiguous_run_lengths) = line.split(REPORT_FORMAT_DELIMITER)
+        unfolded_condition_records = ConditionRecord.UNKNOWN.value.join([raw_condition_records] * UNFOLD_FACTOR)
+        unfolded_damaged_contiguous_run_lengths = DAMAGED_CONTIGUOUS_RUN_LENGTH_DELIMITER.join([raw_damaged_contiguous_run_lengths] * UNFOLD_FACTOR)
+        yield f'{unfolded_condition_records}{REPORT_FORMAT_DELIMITER}{unfolded_damaged_contiguous_run_lengths}'
+
+
+def sum_unfolded_arrangements(lines: Iterable[str]) -> int:
+    """
+    >>> sum_unfolded_arrangements([
+    ...     '???.### 1,1,3',
+    ...     '.??..??...?##. 1,1,3',
+    ...     '?#?#?#?#?#?#?#? 1,3,1,6',
+    ...     '????.#...#... 4,1,1',
+    ...     '????.######..#####. 1,6,5',
+    ...     '?###???????? 3,2,1',
+    ... ])
+    525152
+    """
+    springs = (Spring.from_line(unfolded_line) for unfolded_line in unfold_lines(lines))
     return sum(map(lambda spring: spring.count_arrangements(), springs))
 
 
