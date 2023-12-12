@@ -8,6 +8,7 @@
 from collections.abc import Iterable
 from enum import Enum
 from itertools import chain, groupby
+# from math import factorial
 from typing import NamedTuple
 
 
@@ -133,6 +134,18 @@ class Spring(NamedTuple):
 
         >>> Spring.from_line('#????.#.#..?? 3,1,1,1').count_arrangements()
         3
+        >>> Spring.from_line('?##?#.????#?#??#??? 3,1,2,2,5').count_arrangements()
+        1
+        >>> Spring.from_line('????????????????? 3,2,2,1,1').count_arrangements()
+        126
+        >>> Spring.from_line('..?????.?.?#?#?. 4,4').count_arrangements()
+        4
+        >>> Spring.from_line('???????????#??.????? 1,1,1,7,1,1').count_arrangements()
+        30
+        >>> Spring.from_line('.....??#??.?.???? 2,1').count_arrangements()
+        11
+        >>> Spring.from_line('????.????????????. 2,3,1,1,1').count_arrangements()
+        106
         """
         simplified_spring = self.simplify()
 
@@ -158,6 +171,17 @@ class Spring(NamedTuple):
         if simplified_spring.condition_records[0] != ConditionRecord.UNKNOWN:
             # This only happens if the simplification process encountered an invalid arrangement
             return 0
+
+        # if all(condition_record == ConditionRecord.UNKNOWN for condition_record in simplified_spring.condition_records):
+            # # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths of damaged
+            # # condition reports as `###.##.##.#.#`. We have four unknown condition reports left over, which we can
+            # # distribute to any of the four operational condition reports or the ends.
+            # #
+            # # In other words, how can we pick six slots into groups of four, with replacement?
+            # n = len(simplified_spring.damaged_contiguous_run_lengths) + 1
+            # k = num_condition_records - sum(simplified_spring.damaged_contiguous_run_lengths) - (len(simplified_spring.damaged_contiguous_run_lengths) - 1)
+            # assert n >= k >= 0
+            # return factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
 
         in_run = simplified_spring.damaged_contiguous_run_lengths[0] < 0
         if in_run:
