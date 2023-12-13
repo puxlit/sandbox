@@ -13,7 +13,7 @@ from typing import NamedTuple
 
 
 ########################################################################################################################
-# Part 1
+# Condition records
 ########################################################################################################################
 
 REPORT_FORMAT_DELIMITER = ' '
@@ -165,6 +165,9 @@ class Spring(NamedTuple):
         2500
         >>> Spring.from_line('?###??????????###??????????###??????????###??????????###???????? 3,2,1,3,2,1,3,2,1,3,2,1,3,2,1').count_arrangements()
         506250
+
+        >>> Spring.from_line('????#??.?????????? 2,4,2,1').count_arrangements()
+        36
         """
         simplified_spring = self.simplify()
 
@@ -193,17 +196,79 @@ class Spring(NamedTuple):
 
         in_run = simplified_spring.damaged_contiguous_run_lengths[0] < 0
 
-        if not in_run and all(condition_record == ConditionRecord.UNKNOWN for condition_record in simplified_spring.condition_records):
-            if len(simplified_spring.damaged_contiguous_run_lengths) > 1:
-                # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths of
-                # damaged condition reports as `###.##.##.#.#`. We have four unknown condition reports left over, which
-                # we can distribute to any of the four operational condition reports or the ends.
-                #
-                # In other words, how can we pick six slots into groups of four, with replacement?
-                n = len(simplified_spring.damaged_contiguous_run_lengths) + 1
-                k = num_condition_records - sum(simplified_spring.damaged_contiguous_run_lengths) - (len(simplified_spring.damaged_contiguous_run_lengths) - 1)
-                if n >= k >= 0:
-                    return factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
+        if not in_run:
+            leading_unknown_run_length = 0
+            for (i, condition_record) in enumerate(simplified_spring.condition_records):
+                if condition_record == ConditionRecord.UNKNOWN:
+                    leading_unknown_run_length += 1
+                    continue
+                break
+            should_continue = True
+            requires_annoying_bounds_checks = False
+            if leading_unknown_run_length < 2:
+                should_continue = False
+            if should_continue and (leading_unknown_run_length < num_condition_records):
+                if simplified_spring.condition_records[leading_unknown_run_length] != ConditionRecord.OPERATIONAL:
+                    assert simplified_spring.condition_records[leading_unknown_run_length] == ConditionRecord.DAMAGED
+                    requires_annoying_bounds_checks = True
+            if should_continue:
+                remaining_condition_records = simplified_spring.condition_records[leading_unknown_run_length + (1 if not requires_annoying_bounds_checks else 0):]
+                # This is the maximum sequence of contiguous run lengths of damaged condition reports that we can fit
+                # within the leading contiguous run of unknown condition reports.
+                max_leading_damaged_contiguous_run_lengths: tuple[int, ...] = ()
+                k = leading_unknown_run_length - (1 if requires_annoying_bounds_checks else 0)
+                for (i, damaged_contiguous_run_length) in enumerate(simplified_spring.damaged_contiguous_run_lengths):
+                    new_k = k - damaged_contiguous_run_length - (0 if i == 0 else 1)
+                    if new_k >= 0:
+                        max_leading_damaged_contiguous_run_lengths += (damaged_contiguous_run_length,)
+                        k = new_k
+                        continue
+                    break
+                num_arrangements = 0
+                for i in range(len(max_leading_damaged_contiguous_run_lengths) + 1):
+                    leading_damaged_contiguous_run_lengths = max_leading_damaged_contiguous_run_lengths[:i]
+                    trailing_damaged_contiguous_run_lengths = simplified_spring.damaged_contiguous_run_lengths[i:]
+                    if not leading_damaged_contiguous_run_lengths:
+                        factor = 1
+                        num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                    elif len(leading_damaged_contiguous_run_lengths) == 1:
+                        n = leading_unknown_run_length - leading_damaged_contiguous_run_lengths[0] + 1
+                        if requires_annoying_bounds_checks:
+                            # For a leading contiguous run of unknown condition reports terminated by a damaged
+                            # condition report, we treat the last unknown condition report as an operational condition
+                            # report that separates the leading contiguous run from the terminating damaged condition
+                            # report.
+                            n -= 1
+                        assert n >= 1
+                        factor = n
+                        num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        if requires_annoying_bounds_checks:
+                            # We now try runs that're adjacent to the terminating damaged condition report.
+                            for i in range(-1, -leading_damaged_contiguous_run_lengths[0], -1):
+                                adjusted_trailing_damaged_contiguous_run_lengths = (i,) + trailing_damaged_contiguous_run_lengths[1:]
+                                num_new_arrangements += Spring(remaining_condition_records, adjusted_trailing_damaged_contiguous_run_lengths).count_arrangements()
+                    else:
+                        # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths
+                        # of damaged condition reports as `###.##.##.#.#`. We have four unknown condition reports left
+                        # over, which we can distribute to any of the four operational condition reports or the ends.
+                        #
+                        # In other words, how can we pick six slots into groups of four, with replacement?
+                        n = len(leading_damaged_contiguous_run_lengths) + 1
+                        k = leading_unknown_run_length - sum(leading_damaged_contiguous_run_lengths) - (len(leading_damaged_contiguous_run_lengths) - 1)
+                        if requires_annoying_bounds_checks:
+                            k -= 1
+                        assert n > 0 and k >= 0
+                        factor = factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
+                        num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        if requires_annoying_bounds_checks:
+                            # We now count scenarios where the last run is adjacent to the terminating damaged condition
+                            # report.
+                            for i in range(-1, -leading_damaged_contiguous_run_lengths[-1], -1):
+                                factor = Spring((ConditionRecord.UNKNOWN,) * (leading_unknown_run_length - leading_damaged_contiguous_run_lengths[-1] - 1 - i), leading_damaged_contiguous_run_lengths[:-1]).count_arrangements()
+                                adjusted_trailing_damaged_contiguous_run_lengths = (i,) + trailing_damaged_contiguous_run_lengths[1:]
+                                num_new_arrangements += factor * Spring(remaining_condition_records, adjusted_trailing_damaged_contiguous_run_lengths).count_arrangements()
+                    num_arrangements += num_new_arrangements
+                return num_arrangements
 
         if in_run:
             operational_arrangements = 0
@@ -222,6 +287,10 @@ class Spring(NamedTuple):
         damaged_arrangements = Spring(new_condition_records, simplified_spring.damaged_contiguous_run_lengths[1:]).count_arrangements()
         return operational_arrangements + damaged_arrangements
 
+
+########################################################################################################################
+# Part 1
+########################################################################################################################
 
 def sum_arrangements(lines: Iterable[str]) -> int:
     """
@@ -285,6 +354,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_arrangements(lines))
+    elif args.part == 2:
+        print(sum_unfolded_arrangements(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
