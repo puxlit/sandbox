@@ -30,6 +30,7 @@ class Pattern(NamedTuple):
     @classmethod
     def from_lines(cls, lines: Iterator[str]) -> 'Pattern':
         width = -1
+        height = 0
         columns: list[int] = []
         rows: list[int] = []
         for (y, line) in enumerate(lines):
@@ -43,6 +44,7 @@ class Pattern(NamedTuple):
             elif len(line) != width:
                 raise ValueError(f'Width of line {y + 1} differs from line 1 ({len(line)} ≠ {width})')
 
+            height += 1
             row = 0
             for (x, char) in enumerate(line):
                 assert char in {ASH, ROCKS}
@@ -50,7 +52,7 @@ class Pattern(NamedTuple):
                 columns[x] = (columns[x] << 1) | bit
                 row = (row << 1) | bit
             rows.append(row)
-        return Pattern(width, y, tuple(columns), tuple(rows))
+        return Pattern(width, height, tuple(columns), tuple(rows))
 
     def summarise(self) -> int:
         """
@@ -74,6 +76,27 @@ class Pattern(NamedTuple):
         ...     '#....#..#',
         ... ])).summarise()
         400
+
+        >>> Pattern.from_lines(iter([
+        ...     '#..###.##.#.#...#',
+        ...     '#.##.....#.###.#.',
+        ...     '#.##..#.###.#.#.#',
+        ...     '##........#..###.',
+        ...     '#..##.#.###..#.#.',
+        ...     '#..#.#...#....##.',
+        ...     '#..#.#...#....##.',
+        ...     '#..##.#.###..#.#.',
+        ...     '##........#..###.',
+        ...     '#.##..#.###.#.#.#',
+        ...     '#.##.....#.###.#.',
+        ...     '#..###.##...#...#',
+        ...     '.##...##..#..##..',
+        ...     '####.#...#...##..',
+        ...     '..##.#..#..#.#.#.',
+        ...     '##.##.#.#..#.#..#',
+        ...     '##.##.#.#..#.#..#',
+        ... ])).summarise()
+        1600
         """
         best_reflection_length = 0
         best_summary = 0
@@ -85,6 +108,7 @@ class Pattern(NamedTuple):
                 continue
             if tuple(reversed(self.columns[x + 1 - reflection_length:x + 1])) != self.columns[x + 1:x + 1 + reflection_length]:
                 continue
+            best_reflection_length = reflection_length
             best_summary = COLUMN_REFLECTION_SUMMARY_FACTOR * (x + 1)
         for y in range(0, self.height - 1):
             if self.rows[y] != self.rows[y + 1]:
@@ -94,6 +118,7 @@ class Pattern(NamedTuple):
                 continue
             if tuple(reversed(self.rows[y + 1 - reflection_length:y + 1])) != self.rows[y + 1:y + 1 + reflection_length]:
                 continue
+            best_reflection_length = reflection_length
             best_summary = ROW_REFLECTION_SUMMARY_FACTOR * (y + 1)
         return best_summary
 
