@@ -7,6 +7,7 @@
 
 from collections.abc import Iterable, Iterator
 from enum import Enum
+from functools import cache
 from itertools import chain, groupby
 from math import factorial
 from typing import NamedTuple
@@ -118,6 +119,7 @@ class Spring(NamedTuple):
 
         return Spring(tuple(condition_records), tuple(damaged_contiguous_run_lengths))
 
+    @cache
     def count_arrangements(self) -> int:
         """
         >>> Spring.from_line('???.### 1,1,3').count_arrangements()
