@@ -215,15 +215,19 @@ class Spring(NamedTuple):
                 remaining_condition_records = simplified_spring.condition_records[leading_unknown_run_length + (1 if not requires_annoying_bounds_checks else 0):]
                 # This is the maximum sequence of contiguous run lengths of damaged condition reports that we can fit
                 # within the leading contiguous run of unknown condition reports.
+                #
+                # Well, almost. If our leading contiguous run is terminated by a _damaged_ condition report, then this
+                # is slightly _more_ than what we can fit.
                 max_leading_damaged_contiguous_run_lengths: tuple[int, ...] = ()
-                k = leading_unknown_run_length - (1 if requires_annoying_bounds_checks else 0)
+                k = leading_unknown_run_length
                 for (i, damaged_contiguous_run_length) in enumerate(simplified_spring.damaged_contiguous_run_lengths):
                     new_k = k - damaged_contiguous_run_length - (0 if i == 0 else 1)
-                    if new_k >= 0:
-                        max_leading_damaged_contiguous_run_lengths += (damaged_contiguous_run_length,)
-                        k = new_k
-                        continue
-                    break
+                    if new_k < 0 and not requires_annoying_bounds_checks:
+                        break
+                    max_leading_damaged_contiguous_run_lengths += (damaged_contiguous_run_length,)
+                    if new_k < 0:
+                        break
+                    k = new_k
                 num_arrangements = 0
                 for i in range(len(max_leading_damaged_contiguous_run_lengths) + 1):
                     leading_damaged_contiguous_run_lengths = max_leading_damaged_contiguous_run_lengths[:i]
@@ -239,13 +243,18 @@ class Spring(NamedTuple):
                             # report that separates the leading contiguous run from the terminating damaged condition
                             # report.
                             n -= 1
-                        assert n >= 1
-                        factor = n
-                        num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        if n >= 1:
+                            factor = n
+                            num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        else:
+                            # Example case: `?????#……… 9`.
+                            assert requires_annoying_bounds_checks
+                            num_new_arrangements = 0
                         if requires_annoying_bounds_checks:
+                            run_remaining = -1 if n >= 1 else -max(1, leading_damaged_contiguous_run_lengths[0] - leading_unknown_run_length)
                             # We now try runs that're adjacent to the terminating damaged condition report.
-                            for i in range(-1, -leading_damaged_contiguous_run_lengths[0], -1):
-                                adjusted_trailing_damaged_contiguous_run_lengths = (i,) + trailing_damaged_contiguous_run_lengths[1:]
+                            for j in range(run_remaining, -leading_damaged_contiguous_run_lengths[0], -1):
+                                adjusted_trailing_damaged_contiguous_run_lengths = (j,) + trailing_damaged_contiguous_run_lengths
                                 num_new_arrangements += Spring(remaining_condition_records, adjusted_trailing_damaged_contiguous_run_lengths).count_arrangements()
                     else:
                         # Consider `????????????????? 3,2,2,1,1`. Minimally, we can represent the contiguous run lengths
@@ -257,15 +266,21 @@ class Spring(NamedTuple):
                         k = leading_unknown_run_length - sum(leading_damaged_contiguous_run_lengths) - (len(leading_damaged_contiguous_run_lengths) - 1)
                         if requires_annoying_bounds_checks:
                             k -= 1
-                        assert n > 0 and k >= 0
-                        factor = factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
-                        num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        if n > 0 and k >= 0:
+                            factor = factorial(n + k - 1) // (factorial(k) * factorial(n - 1))
+                            num_new_arrangements = factor * Spring(remaining_condition_records, trailing_damaged_contiguous_run_lengths).count_arrangements()
+                        else:
+                            # Example case: `?????#……… 3,2`.
+                            assert requires_annoying_bounds_checks
+                            num_new_arrangements = 0
                         if requires_annoying_bounds_checks:
+                            available_run_length = leading_unknown_run_length - 1 - sum(leading_damaged_contiguous_run_lengths[:-1]) - (len(leading_damaged_contiguous_run_lengths[:-1]) - 1)
+                            run_remaining = -1 if available_run_length >= leading_damaged_contiguous_run_lengths[-1] else -max(1, leading_damaged_contiguous_run_lengths[-1] - available_run_length)
                             # We now count scenarios where the last run is adjacent to the terminating damaged condition
                             # report.
-                            for i in range(-1, -leading_damaged_contiguous_run_lengths[-1], -1):
-                                factor = Spring((ConditionRecord.UNKNOWN,) * (leading_unknown_run_length - leading_damaged_contiguous_run_lengths[-1] - 1 - i), leading_damaged_contiguous_run_lengths[:-1]).count_arrangements()
-                                adjusted_trailing_damaged_contiguous_run_lengths = (i,) + trailing_damaged_contiguous_run_lengths[1:]
+                            for j in range(run_remaining, -leading_damaged_contiguous_run_lengths[-1], -1):
+                                factor = Spring((ConditionRecord.UNKNOWN,) * (leading_unknown_run_length - leading_damaged_contiguous_run_lengths[-1] - 1 - j), leading_damaged_contiguous_run_lengths[:-1]).count_arrangements()
+                                adjusted_trailing_damaged_contiguous_run_lengths = (j,) + trailing_damaged_contiguous_run_lengths
                                 num_new_arrangements += factor * Spring(remaining_condition_records, adjusted_trailing_damaged_contiguous_run_lengths).count_arrangements()
                     num_arrangements += num_new_arrangements
                 return num_arrangements
