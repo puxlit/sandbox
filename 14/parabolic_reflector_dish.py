@@ -76,8 +76,8 @@ class Platform(NamedTuple):
         return '\n'.join(''.join(tile.value for tile in row) for row in self.rows)
 
     def tilt(self, direction: CardinalDirection) -> 'Platform':
-        """
-        >>> print(str(Platform.from_lines([
+        r"""
+        >>> str(Platform.from_lines([
         ...     'O....#....',
         ...     'O.OO#....#',
         ...     '.....##...',
@@ -88,17 +88,8 @@ class Platform(NamedTuple):
         ...     '.......O..',
         ...     '#....###..',
         ...     '#OO..#....',
-        ... ]).tilt(CardinalDirection.NORTH)))
-        OOOO.#.O..
-        OO..#....#
-        OO..O##..O
-        O..#.OO...
-        ........#.
-        ..#....#.#
-        ..O..#.O.O
-        ..O.......
-        #....###..
-        #....#....
+        ... ]).tilt(CardinalDirection.NORTH))
+        'OOOO.#.O..\nOO..#....#\nOO..O##..O\nO..#.OO...\n........#.\n..#....#.#\n..O..#.O.O\n..O.......\n#....###..\n#....#....'
         """
         mutable_rows = list(list(row) for row in self.rows)
 
@@ -126,6 +117,35 @@ class Platform(NamedTuple):
         if updated_rows != self.rows:
             return Platform(self.width, self.height, updated_rows)
         return self
+
+    def run_spin_cycle(self) -> 'Platform':
+        r"""
+        >>> platform = Platform.from_lines([
+        ...     'O....#....',
+        ...     'O.OO#....#',
+        ...     '.....##...',
+        ...     'OO.#O....O',
+        ...     '.O.....O#.',
+        ...     'O.#..O.#.#',
+        ...     '..O..#O..O',
+        ...     '.......O..',
+        ...     '#....###..',
+        ...     '#OO..#....',
+        ... ])
+        >>> platform_after_one_cycle = platform.run_spin_cycle()
+        >>> str(platform_after_one_cycle)
+        '.....#....\n....#...O#\n...OO##...\n.OO#......\n.....OOO#.\n.O#...O#.#\n....O#....\n......OOOO\n#...O###..\n#..OO#....'
+        >>> platform_after_two_cycles = platform_after_one_cycle.run_spin_cycle()
+        >>> str(platform_after_two_cycles)
+        '.....#....\n....#...O#\n.....##...\n..O#......\n.....OOO#.\n.O#...O#.#\n....O#...O\n.......OOO\n#..OO###..\n#.OOO#...O'
+        >>> platform_after_three_cycles = platform_after_two_cycles.run_spin_cycle()
+        >>> str(platform_after_three_cycles)
+        '.....#....\n....#...O#\n.....##...\n..O#......\n.....OOO#.\n.O#...O#.#\n....O#...O\n.......OOO\n#...O###.O\n#.OOO#...O'
+        """
+        return self.tilt(CardinalDirection.NORTH) \
+                   .tilt(CardinalDirection.WEST)  \
+                   .tilt(CardinalDirection.SOUTH) \
+                   .tilt(CardinalDirection.EAST)
 
     def calculate_support_beam_load(self, direction: CardinalDirection) -> int:
         """
@@ -182,6 +202,32 @@ def tilt_north_and_calculate_support_beam_load(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def run_billion_spin_cycles_and_calculate_support_beam_load(lines: Iterable[str]) -> int:
+    """
+    >>> run_billion_spin_cycles_and_calculate_support_beam_load([
+    ...     'O....#....',
+    ...     'O.OO#....#',
+    ...     '.....##...',
+    ...     'OO.#O....O',
+    ...     '.O.....O#.',
+    ...     'O.#..O.#.#',
+    ...     '..O..#O..O',
+    ...     '.......O..',
+    ...     '#....###..',
+    ...     '#OO..#....',
+    ... ])
+    64
+    """
+    platform = Platform.from_lines(lines)
+    for _ in range(1_000_000_000):
+        platform = platform.run_spin_cycle()
+    return platform.calculate_support_beam_load(CardinalDirection.NORTH)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -196,6 +242,8 @@ def main() -> None:
 
     if args.part == 1:
         print(tilt_north_and_calculate_support_beam_load(lines))
+    elif args.part == 2:
+        print(run_billion_spin_cycles_and_calculate_support_beam_load(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
