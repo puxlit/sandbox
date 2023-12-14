@@ -205,6 +205,9 @@ def tilt_north_and_calculate_support_beam_load(lines: Iterable[str]) -> int:
 # Part 2
 ########################################################################################################################
 
+ONE_BILLION = 1_000_000_000
+
+
 def run_billion_spin_cycles_and_calculate_support_beam_load(lines: Iterable[str]) -> int:
     """
     >>> run_billion_spin_cycles_and_calculate_support_beam_load([
@@ -222,8 +225,19 @@ def run_billion_spin_cycles_and_calculate_support_beam_load(lines: Iterable[str]
     64
     """
     platform = Platform.from_lines(lines)
-    for _ in range(1_000_000_000):
+    witnessed_platforms = {platform: 0}
+    witnessed_platforms_sequence = [platform]
+    for i in range(1, ONE_BILLION + 1):
         platform = platform.run_spin_cycle()
+        if platform in witnessed_platforms:
+            break
+        witnessed_platforms[platform] = i
+        witnessed_platforms_sequence.append(platform)
+    cycle_start = witnessed_platforms[platform]
+    cycle_length = i - cycle_start
+    if cycle_length > 0:
+        cycle_pos = cycle_start + ((ONE_BILLION - i) % cycle_length)
+        platform = witnessed_platforms_sequence[cycle_pos]
     return platform.calculate_support_beam_load(CardinalDirection.NORTH)
 
 
