@@ -7,6 +7,7 @@
 
 from collections.abc import Iterable
 from enum import Enum
+from itertools import chain
 from typing import NamedTuple, Optional
 
 
@@ -70,9 +71,9 @@ class Contraption(NamedTuple):
     def __str__(self) -> str:
         return '\n'.join(''.join(tile.value for tile in row) for row in self.rows)
 
-    def simulate(self) -> tuple[tuple[set[CardinalDirection], ...], ...]:
+    def simulate(self, starting_beamfront: tuple[int, int, CardinalDirection] = (0, 0, CardinalDirection.EAST)) -> tuple[tuple[set[CardinalDirection], ...], ...]:
         beams: list[list[set[CardinalDirection]]] = [[set() for _ in row] for row in self.rows]
-        beamfronts: list[tuple[int, int, CardinalDirection]] = [(0, 0, CardinalDirection.EAST)]
+        beamfronts = [starting_beamfront]
         while beamfronts:
             next_beamfronts: list[tuple[int, int, CardinalDirection]] = []
             for (x, y, direction) in beamfronts:
@@ -148,6 +149,44 @@ def count_energised_tiles(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_maximally_energised_tiles(lines: Iterable[str]) -> int:
+    r"""
+    >>> count_maximally_energised_tiles([
+    ...     '.|...\....',
+    ...     '|.-.\.....',
+    ...     '.....|-...',
+    ...     '........|.',
+    ...     '..........',
+    ...     '.........\\',
+    ...     '..../.\\\\..',
+    ...     '.-.-/..|..',
+    ...     '.|....-|.\\',
+    ...     '..//.|....',
+    ... ])
+    51
+    """
+    contraption = Contraption.from_lines(lines)
+    starting_beamfronts = chain.from_iterable((
+        # Beams enter from the north wall.
+        ((x, 0, CardinalDirection.SOUTH) for x in range(contraption.width)),
+        # Beams enter from the south wall.
+        ((x, contraption.height - 1, CardinalDirection.NORTH) for x in range(contraption.width)),
+        # Beams enter from the east wall.
+        ((contraption.width - 1, y, CardinalDirection.WEST) for y in range(contraption.height)),
+        # Beams enter from the west wall.
+        ((0, y, CardinalDirection.EAST) for y in range(contraption.height)),
+    ))
+    return max(
+        sum(1 for row in contraption.simulate(starting_beamfront) for tile in row if tile)
+        for starting_beamfront
+        in starting_beamfronts
+    )
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -162,6 +201,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_energised_tiles(lines))
+    elif args.part == 2:
+        print(count_maximally_energised_tiles(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
