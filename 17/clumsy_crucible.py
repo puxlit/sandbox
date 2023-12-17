@@ -14,7 +14,7 @@ from typing import NamedTuple, Optional
 
 
 ########################################################################################################################
-# Contraption
+# Map
 ########################################################################################################################
 
 class Coordinate(NamedTuple):
@@ -128,8 +128,8 @@ class Map(NamedTuple):
             open_set.remove(node_with_cost.node)
             return node_with_cost.node
 
-        def heuristic_cost(node: Coordinate):
-            return manhattan_distance(node, goal)
+        def heuristic_cost(coord: Coordinate):
+            return manhattan_distance(coord, goal)
 
         def reconstruct_path(node: Node) -> Path:
             assert node.coord == goal
