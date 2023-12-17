@@ -42,25 +42,30 @@ class CardinalDirection(Enum):
             raise ValueError(f'Unexpected direction: {self!r}')
 
 
-@dataclass(order=True, frozen=True)
-class Path:
-    start: Coordinate = field(hash=True, compare=False)
-    end: Coordinate = field(hash=True, compare=False)
-    directions: tuple[CardinalDirection, ...] = field(hash=True, compare=False)
-    cost: int = field(hash=True, compare=False)
-    heuristic_cost: int = field(hash=True, compare=False)
-    total_cost: int = field(init=False, hash=True, compare=True)
+class Node(NamedTuple):
+    coord: Coordinate
+    restricted_direction: Optional[CardinalDirection]
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, 'total_cost', self.cost + self.heuristic_cost)
+
+@dataclass(order=True, frozen=True)
+class NodeWithCost:
+    f_score: int
+    node: Node = field(hash=True, compare=False)
+
+
+class Path(NamedTuple):
+    start: Coordinate
+    goal: Coordinate
+    directions: tuple[CardinalDirection, ...]
+    cost: int
 
 
 def manhattan_distance(a: Coordinate, b: Coordinate) -> int:
     return abs(a.x - b.x) + abs(a.y - b.y)
 
 
-def translate(width: int, height: int, node: Coordinate, direction: CardinalDirection) -> Optional[Coordinate]:
-    (x, y) = node
+def translate(width: int, height: int, coord: Coordinate, direction: CardinalDirection) -> Optional[Coordinate]:
+    (x, y) = coord
     assert 0 <= x < width
     assert 0 <= y < height
     if direction == CardinalDirection.NORTH:
@@ -105,47 +110,78 @@ class Map(NamedTuple):
         return '\n'.join(''.join(str(cost) for cost in row_costs) for row_costs in self.rows_costs)
 
     def find_minimal_heat_loss_path(self, start: Coordinate, goal: Coordinate) -> 'Path':
-        open_set: list[Path] = []
+        open_set: set[Node] = set()
+        open_heapq: list[NodeWithCost] = []
+        came_from: dict[Node, Node] = {}
+        g_scores: dict[Node, int] = {}
+        f_scores: dict[Node, int] = {}
 
-        def add_to_open_set(path: Path):
-            heappush(open_set, path)
+        def add_to_open_set(next_node: Node, g_score: int):
+            g_scores[next_node] = g_score
+            f_score = g_score + heuristic_cost(next_node.coord)
+            f_scores[next_node] = f_score
+            if next_node not in open_set:
+                open_set.add(next_node)
+                heappush(open_heapq, NodeWithCost(f_score, next_node))
+
+        def remove_from_open_set() -> Node:
+            node_with_cost = heappop(open_heapq)
+            open_set.remove(node_with_cost.node)
+            return node_with_cost.node
 
         def heuristic_cost(node: Coordinate):
             return manhattan_distance(node, goal)
+
+        def reconstruct_path(node: Node) -> Path:
+            assert node.coord == goal
+            assert node.restricted_direction
+            directions: tuple[CardinalDirection, ...] = ()
+            cost = f_scores[node]
+            while node in came_from:
+                prev_node = came_from[node]
+                directions = ((node.restricted_direction,) * manhattan_distance(prev_node.coord, node.coord)) + directions
+                node = prev_node
+                if not node.restricted_direction:
+                    assert node.coord == start
+                    break
+            return Path(start, goal, directions, cost)
 
         def is_valid_path(path: Path) -> bool:
             return all(len(tuple(consecutive_directions)) <= MAX_CONSECUTIVE_BLOCKS
                        for (_, consecutive_directions)
                        in groupby(path.directions))
 
-        def enumerate_neighbouring_paths(path: Path) -> Iterator[Path]:
-            restricted_directions: set[CardinalDirection] = set()
-            if path.directions:
-                # We can't go backwards.
-                restricted_directions.add(path.directions[-1].reverse)
-                last_n_directions = path.directions[-MAX_CONSECUTIVE_BLOCKS:]
-                if len(last_n_directions) == MAX_CONSECUTIVE_BLOCKS and len(set(last_n_directions)) == 1:
-                    # We can't go in the same direction anymore.
-                    restricted_directions.add(path.directions[-1])
-            for direction in CardinalDirection:
-                if direction in restricted_directions:
+        def enumerate_neighbouring_nodes(node: Node) -> Iterator[tuple[Node, int]]:
+            (coord, restricted_direction) = node
+            # For simplicity, when enumerating neighbouring nodes, we assume we've gotten to this node by travelling
+            # `MAX_CONSECUTIVE_BLOCKS` already. Also, we enforce not being able to traverse backwards.
+            restricted_directions = {restricted_direction, restricted_direction.reverse} if restricted_direction else set()
+            for next_direction in CardinalDirection:
+                if next_direction in restricted_directions:
                     continue
-                next_node = translate(self.width, self.height, path.end, direction)
-                if not next_node:
-                    continue
-                next_directions = path.directions + (direction,)
-                next_cost = path.cost + self.rows_costs[next_node.y][next_node.x]
-                next_heuristic_cost = heuristic_cost(next_node)
-                yield Path(path.start, next_node, next_directions, next_cost, next_heuristic_cost)
+                next_coord: Optional[Coordinate] = coord
+                h_score = 0
+                for i in range(MAX_CONSECUTIVE_BLOCKS):
+                    assert next_coord
+                    next_coord = translate(self.width, self.height, next_coord, next_direction)
+                    if not next_coord:
+                        # We've hit the map extent.
+                        break
+                    h_score += self.rows_costs[next_coord.y][next_coord.x]
+                    yield (Node(next_coord, next_direction), h_score)
 
-        add_to_open_set(Path(start, start, (), 0, heuristic_cost(start)))
+        add_to_open_set(Node(start, None), 0)
         while open_set:
-            current_path = heappop(open_set)
-            if current_path.end == goal:
-                assert is_valid_path(current_path)
-                return current_path
-            for neighbouring_path in enumerate_neighbouring_paths(current_path):
-                add_to_open_set(neighbouring_path)
+            node = remove_from_open_set()
+            if node.coord == goal:
+                best_path = reconstruct_path(node)
+                assert is_valid_path(best_path)
+                return best_path
+            for (next_node, h_score) in enumerate_neighbouring_nodes(node):
+                tentative_g_score = g_scores[node] + h_score
+                if (next_node not in g_scores) or (tentative_g_score < g_scores[next_node]):
+                    came_from[next_node] = node
+                    add_to_open_set(next_node, tentative_g_score)
 
         raise ValueError(f'Cannot reach {goal!r} from {start!r}')
 
