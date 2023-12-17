@@ -85,9 +85,6 @@ def translate(width: int, height: int, coord: Coordinate, direction: CardinalDir
     return None
 
 
-MAX_CONSECUTIVE_BLOCKS = 3
-
-
 class Map(NamedTuple):
     width: int
     height: int
@@ -109,7 +106,9 @@ class Map(NamedTuple):
     def __str__(self) -> str:
         return '\n'.join(''.join(str(cost) for cost in row_costs) for row_costs in self.rows_costs)
 
-    def find_minimal_heat_loss_path(self, start: Coordinate, goal: Coordinate) -> 'Path':
+    def find_minimal_heat_loss_path(self, start: Coordinate, goal: Coordinate, min_moves: int, max_moves: int) -> 'Path':
+        assert 1 <= min_moves <= max_moves
+
         open_set: set[Node] = set()
         open_heapq: list[NodeWithCost] = []
         came_from: dict[Node, Node] = {}
@@ -147,28 +146,29 @@ class Map(NamedTuple):
             return Path(start, goal, directions, cost)
 
         def is_valid_path(path: Path) -> bool:
-            return all(len(tuple(consecutive_directions)) <= MAX_CONSECUTIVE_BLOCKS
+            return all(min_moves <= len(tuple(consecutive_directions)) <= max_moves
                        for (_, consecutive_directions)
                        in groupby(path.directions))
 
         def enumerate_neighbouring_nodes(node: Node) -> Iterator[tuple[Node, int]]:
             (coord, restricted_direction) = node
             # For simplicity, when enumerating neighbouring nodes, we assume we've gotten to this node by travelling
-            # `MAX_CONSECUTIVE_BLOCKS` already. Also, we enforce not being able to traverse backwards.
+            # `max_moves` already. Also, we enforce not being able to traverse backwards.
             restricted_directions = {restricted_direction, restricted_direction.reverse} if restricted_direction else set()
             for next_direction in CardinalDirection:
                 if next_direction in restricted_directions:
                     continue
                 next_coord: Optional[Coordinate] = coord
                 h_score = 0
-                for i in range(MAX_CONSECUTIVE_BLOCKS):
+                for i in range(max_moves):
                     assert next_coord
                     next_coord = translate(self.width, self.height, next_coord, next_direction)
                     if not next_coord:
                         # We've hit the map extent.
                         break
                     h_score += self.rows_costs[next_coord.y][next_coord.x]
-                    yield (Node(next_coord, next_direction), h_score)
+                    if i >= min_moves - 1:
+                        yield (Node(next_coord, next_direction), h_score)
 
         add_to_open_set(Node(start, None), 0)
         while open_set:
@@ -190,9 +190,9 @@ class Map(NamedTuple):
 # Part 1
 ########################################################################################################################
 
-def calculate_minimal_heat_loss(lines: Iterable[str]) -> int:
+def calculate_minimal_crucible_heat_loss(lines: Iterable[str]) -> int:
     """
-    >>> calculate_minimal_heat_loss([
+    >>> calculate_minimal_crucible_heat_loss([
     ...     '2413432311323',
     ...     '3215453535623',
     ...     '3255245654254',
@@ -210,7 +210,43 @@ def calculate_minimal_heat_loss(lines: Iterable[str]) -> int:
     102
     """
     map_ = Map.from_lines(lines)
-    best_path = map_.find_minimal_heat_loss_path(Coordinate(0, 0), Coordinate(map_.width - 1, map_.height - 1))
+    best_path = map_.find_minimal_heat_loss_path(Coordinate(0, 0), Coordinate(map_.width - 1, map_.height - 1), 1, 3)
+    return best_path.cost
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def calculate_minimal_ultra_crucible_heat_loss(lines: Iterable[str]) -> int:
+    """
+    >>> calculate_minimal_ultra_crucible_heat_loss([
+    ...     '2413432311323',
+    ...     '3215453535623',
+    ...     '3255245654254',
+    ...     '3446585845452',
+    ...     '4546657867536',
+    ...     '1438598798454',
+    ...     '4457876987766',
+    ...     '3637877979653',
+    ...     '4654967986887',
+    ...     '4564679986453',
+    ...     '1224686865563',
+    ...     '2546548887735',
+    ...     '4322674655533',
+    ... ])
+    94
+    >>> calculate_minimal_ultra_crucible_heat_loss([
+    ...     '111111111111',
+    ...     '999999999991',
+    ...     '999999999991',
+    ...     '999999999991',
+    ...     '999999999991',
+    ... ])
+    71
+    """
+    map_ = Map.from_lines(lines)
+    best_path = map_.find_minimal_heat_loss_path(Coordinate(0, 0), Coordinate(map_.width - 1, map_.height - 1), 4, 10)
     return best_path.cost
 
 
@@ -228,7 +264,9 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(calculate_minimal_heat_loss(lines))
+        print(calculate_minimal_crucible_heat_loss(lines))
+    elif args.part == 2:
+        print(calculate_minimal_ultra_crucible_heat_loss(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
