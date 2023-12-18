@@ -209,8 +209,6 @@ class DigPlan(NamedTuple):
                             mask_spans.insert(i, (row_span_end, mask_span_end))
                         if mask_span_start != row_span_start:
                             mask_spans.insert(i, (mask_span_start, row_span_start))
-                        if mask_span_start < row_span_start and row_span_end < mask_span_end:
-                            volume -= row_span_end - row_span_start - 1
                         break
                     elif mask_span_end == row_span_start:
                         # Row span's left side touches mask span's right side. Extend mask span.
@@ -232,6 +230,7 @@ class DigPlan(NamedTuple):
                         mask_spans.pop(i)
                         mask_spans.pop(i)
                         mask_spans.insert(i, (mask_span_start, next_mask_span_end))
+                        volume -= 1
                     i += 1
         # We should wind up with an empty mask at the very end.
         assert not mask_spans
@@ -244,6 +243,19 @@ class DigPlan(NamedTuple):
 
 def calculate_volume(lines: Iterable[str]) -> int:
     """
+    ```
+    △▶▶▶▶▶▶
+    ▲#####▼
+    ◀◀▲###▼
+    ..▲###▼
+    ..▲###▼
+    ▲▶▶#◀◀▼
+    ▲###▼..
+    ◀▲##▼▶▶
+    .▲####▼
+    .◀◀◀◀◀▼
+    ```
+
     >>> calculate_volume([
     ...     'R 6 (#70c710)',
     ...     'D 5 (#0dc571)',
@@ -261,6 +273,46 @@ def calculate_volume(lines: Iterable[str]) -> int:
     ...     'U 2 (#7a21e3)',
     ... ])
     62
+
+    ```
+    ....◀▲.◀▲....
+    ....▼▲.▼▲....
+    ....▼◀◀▼▲....
+    ....▼###▲....
+    ◀◀◀◀▼###◁◀◀◀▲
+    ▼▶▶▶▶▶▶▶▶▶##▲
+    .........▼##▲
+    ◀◀◀◀◀◀◀◀◀▼##▲
+    ▼▶▶▶▶###▲▶▶▶▶
+    ....▼###▲....
+    ....▼###▲....
+    ....▼###▲....
+    ....▼▶▶▶▶....
+    ```
+
+    >>> calculate_volume([
+    ...     'U 4 (#ffffff)',
+    ...     'L 1 (#ffffff)',
+    ...     'D 2 (#ffffff)',
+    ...     'L 2 (#ffffff)',
+    ...     'U 2 (#ffffff)',
+    ...     'L 1 (#ffffff)',
+    ...     'D 4 (#ffffff)',
+    ...     'L 4 (#ffffff)',
+    ...     'D 1 (#ffffff)',
+    ...     'R 9 (#ffffff)',
+    ...     'D 2 (#ffffff)',
+    ...     'L 9 (#ffffff)',
+    ...     'D 1 (#ffffff)',
+    ...     'R 4 (#ffffff)',
+    ...     'D 4 (#ffffff)',
+    ...     'R 4 (#ffffff)',
+    ...     'U 4 (#ffffff)',
+    ...     'R 4 (#ffffff)',
+    ...     'U 4 (#ffffff)',
+    ...     'L 4 (#ffffff)',
+    ... ])
+    94
     """
     dig_plan = DigPlan.from_lines(lines)
     return dig_plan.calculate_volume()
