@@ -8,7 +8,7 @@
 from collections.abc import Iterable, Iterator
 from enum import Enum
 import re
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 
 ########################################################################################################################
@@ -97,6 +97,7 @@ class Colour(NamedTuple):
 
 
 DIG_INSTRUCTION_PATTERN = re.compile(r'^([DLRU]) ([1-9]\d*) \((#[0-9a-f]{6})\)$')
+CORRECT_DIG_INSTRUCTION_PATTERN = re.compile(r'^[DLRU] [1-9]\d* \(#([0-9a-f]{5})([0-3])\)$')
 
 
 class DigInstruction(NamedTuple):
@@ -120,14 +121,32 @@ class DigInstruction(NamedTuple):
         colour = Colour.from_rgb_hexadecimal_colour_code(raw_colour)
         return DigInstruction(start_grid_coord, end_grid_coord, direction, length, colour)
 
+    @classmethod
+    def from_correct_line(cls, line: str, start_grid_coord: Coordinate, allowed_directions: set[Direction]) -> 'DigInstruction':
+        match = CORRECT_DIG_INSTRUCTION_PATTERN.fullmatch(line)
+        if not match:
+            raise ValueError(f'Invalid dig instruction: {line!r}')
+        (raw_length, raw_direction) = match.groups()
+        length = int(raw_length, 16)
+        direction = [
+            Direction.RIGHT,
+            Direction.DOWN,
+            Direction.LEFT,
+            Direction.UP,
+        ][int(raw_direction)]
+        if direction not in allowed_directions:
+            raise ValueError(f'Invalid dig instruction (direction not allowed): {line!r}')
+        end_grid_coord = start_grid_coord.translate(direction, length)
+        return DigInstruction(start_grid_coord, end_grid_coord, direction, length, Colour(0, 0, 0))
+
 
 class DigPlan(NamedTuple):
     max_grid_coord: Coordinate
     instructions: tuple[DigInstruction, ...]
-    span_grid_coords_by_row: tuple[tuple[tuple[int, int], ...], ...]
+    span_grid_coords_by_row: dict[int, tuple[tuple[int, int], ...]]
 
     @classmethod
-    def from_lines(cls, lines: Iterable[str]) -> 'DigPlan':
+    def from_lines(cls, lines: Iterable[str], instruction_parser: Callable[[str, Coordinate, set[Direction]], DigInstruction]) -> 'DigPlan':
         instructions: list[DigInstruction] = []
         origin_grid_coord = Coordinate(0, 0)
         min_grid_coord = origin_grid_coord
@@ -135,7 +154,7 @@ class DigPlan(NamedTuple):
         start_grid_coord = origin_grid_coord
         allowed_directions = {Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT}
         for line in lines:
-            instruction = DigInstruction.from_line(line, start_grid_coord, allowed_directions)
+            instruction = instruction_parser(line, start_grid_coord, allowed_directions)
 
             if instruction.end_grid_coord.x < min_grid_coord.x:
                 min_grid_coord = Coordinate(instruction.end_grid_coord.x, min_grid_coord.y)
@@ -165,23 +184,28 @@ class DigPlan(NamedTuple):
         ) for instruction in instructions)
         translated_max_grid_coord = Coordinate(max_grid_coord.x - min_grid_coord.x, max_grid_coord.y - min_grid_coord.y)
 
-        corner_grid_coords_by_row: list[set[int]] = [set() for _ in range(translated_max_grid_coord.y + 1)]
+        corner_grid_coords_by_row: dict[int, set[int]] = {}
         for translated_instruction in translated_instructions:
-            corner_grid_coords_by_row[translated_instruction.end_grid_coord.y].add(translated_instruction.end_grid_coord.x)
-        span_grid_coords_by_row = tuple(tuple(span for span in pairs(sorted(row_corner_grid_coords))) for row_corner_grid_coords in corner_grid_coords_by_row)
+            row_corner_grid_coords = corner_grid_coords_by_row.setdefault(translated_instruction.end_grid_coord.y, set())
+            row_corner_grid_coords.add(translated_instruction.end_grid_coord.x)
+        span_grid_coords_by_row = {y: tuple(span for span in pairs(sorted(row_corner_grid_coords))) for (y, row_corner_grid_coords) in corner_grid_coords_by_row.items()}
 
         return DigPlan(translated_max_grid_coord, translated_instructions, span_grid_coords_by_row)
 
     def calculate_volume(self) -> int:
         volume = 0
         mask_spans: list[tuple[int, int]] = []
-        for row_spans in self.span_grid_coords_by_row:
+        prev_y = -1
+        for y in sorted(self.span_grid_coords_by_row.keys()):
+            row_spans = self.span_grid_coords_by_row[y]
             should_skip_mask_update = False
             if not mask_spans:
                 mask_spans = list(row_spans)
                 should_skip_mask_update = True
+            height = y - prev_y
             for (mask_span_start, mask_span_end) in mask_spans:
-                volume += mask_span_end - mask_span_start + 1
+                volume += height * (mask_span_end - mask_span_start + 1)
+            prev_y = y
             if should_skip_mask_update:
                 continue
             for row_span in row_spans:
@@ -314,7 +338,35 @@ def calculate_volume(lines: Iterable[str]) -> int:
     ... ])
     94
     """
-    dig_plan = DigPlan.from_lines(lines)
+    dig_plan = DigPlan.from_lines(lines, DigInstruction.from_line)
+    return dig_plan.calculate_volume()
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def calculate_correct_volume(lines: Iterable[str]) -> int:
+    """
+    >>> calculate_correct_volume([
+    ...     'R 6 (#70c710)',
+    ...     'D 5 (#0dc571)',
+    ...     'L 2 (#5713f0)',
+    ...     'D 2 (#d2c081)',
+    ...     'R 2 (#59c680)',
+    ...     'D 2 (#411b91)',
+    ...     'L 5 (#8ceee2)',
+    ...     'U 2 (#caa173)',
+    ...     'L 1 (#1b58a2)',
+    ...     'U 2 (#caa171)',
+    ...     'R 2 (#7807d2)',
+    ...     'U 3 (#a77fa3)',
+    ...     'L 2 (#015232)',
+    ...     'U 2 (#7a21e3)',
+    ... ])
+    952408144115
+    """
+    dig_plan = DigPlan.from_lines(lines, DigInstruction.from_correct_line)
     return dig_plan.calculate_volume()
 
 
@@ -333,6 +385,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_volume(lines))
+    elif args.part == 2:
+        print(calculate_correct_volume(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
