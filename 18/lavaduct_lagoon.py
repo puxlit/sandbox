@@ -209,6 +209,8 @@ class DigPlan(NamedTuple):
                             mask_spans.insert(i, (row_span_end, mask_span_end))
                         if mask_span_start != row_span_start:
                             mask_spans.insert(i, (mask_span_start, row_span_start))
+                        if mask_span_start < row_span_start and row_span_end < mask_span_end:
+                            volume -= row_span_end - row_span_start - 1
                         break
                     elif mask_span_end == row_span_start:
                         # Row span's left side touches mask span's right side. Extend mask span.
