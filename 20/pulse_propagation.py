@@ -7,15 +7,17 @@
 
 from collections import Counter
 from collections.abc import Iterable
+from itertools import chain, count
 import re
 from typing import Callable, Optional, Union
+
 
 ########################################################################################################################
 # Part 1
 ########################################################################################################################
 
 FlipFlopModuleState = bool
-ConjunctionModuleState = tuple[tuple[str, bool], ...]  # I can't be bothered whipping up a hashable frozen dict.
+ConjunctionModuleState = tuple[tuple[str, Optional[bool]], ...]  # I can't be bothered whipping up a hashable frozen dict.
 BroadcastModuleState = type(None)
 ModuleState = Union[FlipFlopModuleState, ConjunctionModuleState, BroadcastModuleState]
 
@@ -46,7 +48,7 @@ def process_pulse_to_flip_flop_module(state: ModuleState, pulse: bool, upstream_
 
 
 def process_pulse_to_conjunction_module(state: ModuleState, pulse: bool, upstream_module_name: str) -> tuple[ModuleState, Optional[bool]]:
-    assert isinstance(state, tuple) and all((isinstance(a, str) and isinstance(b, bool)) for (a, b) in state)
+    assert isinstance(state, tuple) and all((isinstance(a, str) and (isinstance(b, bool) or b is None)) for (a, b) in state)
     temp_state = dict(state)
     assert upstream_module_name in temp_state
     temp_state[upstream_module_name] = pulse
@@ -113,7 +115,9 @@ def parse_modules_config(lines: Iterable[str]) -> tuple[ModulesConfig, ModulesSt
     for (i, (module_name, state)) in enumerate(zip(config.keys(), initial_state)):
         if state == ():
             # Conjunction modules initially remember the most recent pulse as low for all upstream/input modules.
-            initial_state[i] = tuple((upstream_module_name, False) for upstream_module_name in sorted(upstream_modules[module_name]))
+            # However, we'll draw a distinction between the default most recent pulse and a real most recent pulse of
+            # low.
+            initial_state[i] = tuple((upstream_module_name, None) for upstream_module_name in sorted(upstream_modules[module_name]))
 
     return (config, tuple(initial_state))
 
@@ -167,8 +171,8 @@ def count_pulse_types(config: ModulesConfig, state: ModulesState, num_button_pre
                 total_low_pulses += sum(witnessed_states[witnessed_state][1] for witnessed_state in witnessed_state_sequence[cycle_start_index:]) * full_cycles
                 total_high_pulses += sum(witnessed_states[witnessed_state][2] for witnessed_state in witnessed_state_sequence[cycle_start_index:]) * full_cycles
             if partial_cycle_pos > 0:
-                total_low_pulses += sum(witnessed_states[witnessed_state][1] for witnessed_state in witnessed_state_sequence[cycle_start_index:cycle_start_index + partial_cycle_pos]) * full_cycles
-                total_high_pulses += sum(witnessed_states[witnessed_state][2] for witnessed_state in witnessed_state_sequence[cycle_start_index:cycle_start_index + partial_cycle_pos]) * full_cycles
+                total_low_pulses += sum(witnessed_states[witnessed_state][1] for witnessed_state in witnessed_state_sequence[cycle_start_index:cycle_start_index + partial_cycle_pos])
+                total_high_pulses += sum(witnessed_states[witnessed_state][2] for witnessed_state in witnessed_state_sequence[cycle_start_index:cycle_start_index + partial_cycle_pos])
 
     return (total_low_pulses, total_high_pulses)
 
@@ -198,6 +202,25 @@ def calculate_product_of_pulse_types_after_thousand_button_presses(lines: Iterab
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_button_presses_until_rx_is_triggered(lines: Iterable[str]) -> int:
+    (config, initial_state) = parse_modules_config(chain.from_iterable((
+        lines,
+        ('&rx -> dummy',),
+    )))
+    state = initial_state
+    for i in count(1):
+        (state, _) = propagate(config, state)
+        rx_state = state[-1]
+        assert isinstance(rx_state, tuple) and all((isinstance(a, str) and (isinstance(b, bool) or b is None)) for (a, b) in rx_state)
+        if any(s is False for (_, s) in rx_state):
+            break
+    return i
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -212,6 +235,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_product_of_pulse_types_after_thousand_button_presses(lines))
+    elif args.part == 2:
+        print(count_button_presses_until_rx_is_triggered(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
