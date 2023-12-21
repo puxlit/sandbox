@@ -105,23 +105,32 @@ class Map(NamedTuple):
         16
         """
         assert total_steps >= 1
-        final_frontier: set[Coordinate] = set()
+        visited_garden_plots: set[Coordinate] = set()
         frontier: list[tuple[int, Coordinate]] = [(total_steps, self.starting_position)]
+        last_steps_remaining = total_steps
+        reachable_garden_plots = 0
         while frontier:
             (steps_remaining, position) = frontier.pop(0)
-            assert steps_remaining >= 1
+            if steps_remaining != last_steps_remaining:
+                last_steps_remaining = steps_remaining
+                reachable_garden_plots = len(visited_garden_plots) - reachable_garden_plots
+            assert steps_remaining >= 0
             assert self.tiles[position.y][position.x] == Tile.GARDEN_PLOT
+            if position in visited_garden_plots:
+                continue
+            visited_garden_plots.add(position)
+            if steps_remaining == 0:
+                continue
             next_steps_remaining = steps_remaining - 1
             for next_position in (translate(self.width, self.height, position, direction) for direction in CardinalDirection):
                 if next_position is None:
                     continue
                 if self.tiles[next_position.y][next_position.x] != Tile.GARDEN_PLOT:
                     continue
-                if next_steps_remaining >= 1:
-                    frontier.append((next_steps_remaining, next_position))
-                else:
-                    final_frontier.add(next_position)
-        return len(final_frontier)
+                if next_position in visited_garden_plots:
+                    continue
+                frontier.append((next_steps_remaining, next_position))
+        return len(visited_garden_plots) - reachable_garden_plots
 
 
 ########################################################################################################################
