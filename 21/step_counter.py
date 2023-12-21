@@ -29,25 +29,23 @@ class CardinalDirection(Enum):
     WEST = 'W'
 
 
-def translate(width: int, height: int, coord: Coordinate, direction: CardinalDirection) -> Optional[Coordinate]:
+def translate(coord: Coordinate, direction: CardinalDirection) -> Coordinate:
     (x, y) = coord
-    assert 0 <= x < width
-    assert 0 <= y < height
     if direction == CardinalDirection.NORTH:
-        if y > 0:
-            return Coordinate(x, y - 1)
+        return Coordinate(x, y - 1)
     elif direction == CardinalDirection.SOUTH:
-        if y < height - 1:
-            return Coordinate(x, y + 1)
+        return Coordinate(x, y + 1)
     elif direction == CardinalDirection.EAST:
-        if x < width - 1:
-            return Coordinate(x + 1, y)
+        return Coordinate(x + 1, y)
     elif direction == CardinalDirection.WEST:
-        if x > 0:
-            return Coordinate(x - 1, y)
+        return Coordinate(x - 1, y)
     else:
         raise ValueError(f'Unexpected direction: {direction!r}')
-    return None
+
+
+def wrap(width: int, height: int, coord: Coordinate) -> Coordinate:
+    (x, y) = coord
+    return Coordinate(x % width, y % height)
 
 
 class Tile(Enum):
@@ -87,9 +85,9 @@ class Map(NamedTuple):
             raise ValueError(f'Parsed {width} × {y + 1} map, but no starting position was specified')
         return Map(width, y + 1, starting_position, tuple(rows))
 
-    def count_reachable_garden_plots(self, total_steps: int) -> int:
+    def count_reachable_garden_plots(self, total_steps: int, wraparound: bool) -> int:
         """
-        >>> Map.from_lines([
+        >>> map_ = Map.from_lines([
         ...     '...........',
         ...     '.....###.#.',
         ...     '.###.##..#.',
@@ -101,35 +99,52 @@ class Map(NamedTuple):
         ...     '.##.#.####.',
         ...     '.##..##.##.',
         ...     '...........',
-        ... ]).count_reachable_garden_plots(6)
+        ... ])
+        >>> map_.count_reachable_garden_plots(6, False)
         16
+        >>> map_.count_reachable_garden_plots(6, True)
+        16
+        >>> map_.count_reachable_garden_plots(10, True)
+        50
+        >>> map_.count_reachable_garden_plots(50, True)
+        1594
+        >>> map_.count_reachable_garden_plots(100, True)
+        6536
+        >>> # map_.count_reachable_garden_plots(500, True)
+        >>> # 167004
+        >>> # map_.count_reachable_garden_plots(1000, True)
+        >>> # 668697
+        >>> # map_.count_reachable_garden_plots(5000, True)
+        >>> # 16733044
         """
         assert total_steps >= 1
         visited_garden_plots: set[Coordinate] = set()
-        frontier: list[tuple[int, Coordinate]] = [(total_steps, self.starting_position)]
+        frontier: list[tuple[int, Coordinate, Coordinate]] = [(total_steps, self.starting_position, self.starting_position)]
         last_steps_remaining = total_steps
         reachable_garden_plots = 0
         while frontier:
-            (steps_remaining, position) = frontier.pop(0)
+            (steps_remaining, wrapped_position, position) = frontier.pop(0)
             if steps_remaining != last_steps_remaining:
                 last_steps_remaining = steps_remaining
+                # By definition, when we take a next step, we can't be where we were in the previous step.
                 reachable_garden_plots = len(visited_garden_plots) - reachable_garden_plots
             assert steps_remaining >= 0
-            assert self.tiles[position.y][position.x] == Tile.GARDEN_PLOT
+            assert self.tiles[wrapped_position.y][wrapped_position.x] == Tile.GARDEN_PLOT
             if position in visited_garden_plots:
                 continue
             visited_garden_plots.add(position)
             if steps_remaining == 0:
                 continue
             next_steps_remaining = steps_remaining - 1
-            for next_position in (translate(self.width, self.height, position, direction) for direction in CardinalDirection):
-                if next_position is None:
+            for next_position in (translate(position, direction) for direction in CardinalDirection):
+                next_wrapped_position = wrap(self.width, self.height, next_position)
+                if not wraparound and (next_wrapped_position != next_position):
                     continue
-                if self.tiles[next_position.y][next_position.x] != Tile.GARDEN_PLOT:
+                if self.tiles[next_wrapped_position.y][next_wrapped_position.x] != Tile.GARDEN_PLOT:
                     continue
                 if next_position in visited_garden_plots:
                     continue
-                frontier.append((next_steps_remaining, next_position))
+                frontier.append((next_steps_remaining, next_wrapped_position, next_position))
         return len(visited_garden_plots) - reachable_garden_plots
 
 
@@ -139,7 +154,16 @@ class Map(NamedTuple):
 
 def count_reachable_garden_plots(lines: Iterable[str]) -> int:
     map_ = Map.from_lines(lines)
-    return map_.count_reachable_garden_plots(64)
+    return map_.count_reachable_garden_plots(64, False)
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_contrived_reachable_garden_plots(lines: Iterable[str]) -> int:
+    map_ = Map.from_lines(lines)
+    return map_.count_reachable_garden_plots(26501365, True)
 
 
 ########################################################################################################################
@@ -157,6 +181,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_reachable_garden_plots(lines))
+    elif args.part == 2:
+        print(count_contrived_reachable_garden_plots(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
