@@ -137,9 +137,11 @@ class Snapshot(NamedTuple):
         safely_disintegrable_bricks = 0
         for brick in self.settled_bricks:
             if len(self.bricks_supported[brick]) == 0:
+                # This brick doesn't support any other bricks; it's safely disintegrable.
                 safely_disintegrable_bricks += 1
                 continue
             if all(len(self.support_bricks[supported_brick]) > 1 for supported_brick in self.bricks_supported[brick]):
+                # This brick supports other bricks, all of which have at least one different brick also supporting them.
                 safely_disintegrable_bricks += 1
                 continue
         return safely_disintegrable_bricks
@@ -167,6 +169,46 @@ def count_safely_disintegrable_bricks(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def sum_chain_reaction_falling_bricks(lines: Iterable[str]) -> int:
+    """
+    >>> sum_chain_reaction_falling_bricks([
+    ...     '1,0,1~1,2,1',
+    ...     '0,0,2~2,0,2',
+    ...     '0,2,3~2,2,3',
+    ...     '0,0,4~0,2,4',
+    ...     '2,0,5~2,2,5',
+    ...     '0,1,6~2,1,6',
+    ...     '1,1,8~1,1,9',
+    ... ])
+    7
+    """
+    snapshot = Snapshot.from_lines(lines)
+    chain_reaction_falling_bricks = 0
+    cumulative_bricks_supported: dict[Brick, set[Brick]] = {}
+    for brick in reversed(snapshot.settled_bricks):
+        cumulative_bricks_supported[brick] = snapshot.bricks_supported[brick].copy()
+        for supported_brick in snapshot.bricks_supported[brick]:
+            cumulative_bricks_supported[brick] |= cumulative_bricks_supported[supported_brick]
+        if len(snapshot.bricks_supported[brick]) == 0:
+            # This brick doesn't support any other bricks; disintegrating it won't cause any other bricks to fall.
+            continue
+        potential_falling_bricks = cumulative_bricks_supported[brick].copy()
+        not_falling_bricks: set[Brick] = set()
+        for potential_falling_brick in potential_falling_bricks:
+            if not snapshot.support_bricks[potential_falling_brick] <= potential_falling_bricks | {brick}:
+                # This brick is supported by other bricks that aren't part of the chain reaction. Exclude 'em.
+                not_falling_bricks.add(potential_falling_brick)
+                not_falling_bricks |= cumulative_bricks_supported[potential_falling_brick]
+        not_falling_bricks -= {brick}
+        assert len(potential_falling_bricks) >= len(not_falling_bricks)
+        chain_reaction_falling_bricks += len(potential_falling_bricks) - len(not_falling_bricks)
+    return chain_reaction_falling_bricks
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -181,6 +223,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_safely_disintegrable_bricks(lines))
+    elif args.part == 2:
+        print(sum_chain_reaction_falling_bricks(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
