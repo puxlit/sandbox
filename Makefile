@@ -23,8 +23,9 @@ resources := \
 encrypted_resources := $(resources:=.gpg)
 # Challenge categories match /[a-z]+/, and most challenge names match /[0-9A-Z_a-z]+/, with "you're_based" and "you're_bababased?" as exceptions.
 files := $(and $(wildcard $(challenge_resources)),$(shell jq --raw-output '.data | select((.category | test("^[a-z]+$$")) and (.name | test("^['"'"'0-9?A-Z_a-z]+$$"))) | . as {$$category, $$name} | .files[] | match("(?<=^/files/[0-9a-f]{32}/)[.0-9_a-z]+(?=\\?token=[-0-9A-Z_a-z]+\\.[-0-9A-Z_a-z]+\\.[-0-9A-Z_a-z]+$$)").string as $$filename | "challenges/\($$category)/\($$name)/files/\($$filename)"' $(wildcard $(challenge_resources))))
+skeletons := $(and $(wildcard resources/challenges.json),$(shell jq --raw-output '.data[] | select((.category | test("^[a-z]+$$")) and (.name | test("^['"'"'0-9?A-Z_a-z]+$$"))) | "challenges/\(.category)/\(.name)/README.md"' resources/challenges.json))
 
-all: all-resources all-files
+all: all-resources all-files all-skeletons README.md
 
 .SUFFIXES:
 
@@ -46,4 +47,15 @@ $(files): resources/challenges.json
 	file_url=$$(jq --raw-output '.data.files | map(select(match("(?<=^/files/[0-9a-f]{32}/)[.0-9_a-z]+(?=\\?token=[-0-9A-Z_a-z]+\\.[-0-9A-Z_a-z]+\\.[-0-9A-Z_a-z]+$$)").string == "$(notdir $@)")) | first' resources/challenges/$${challenge_id}.json) && \
 	curl -o "$@" "$(BASE_URL)$${file_url}"
 
-.PHONY: all all-resources all-files
+all-skeletons: $(skeletons)
+
+# This rule is technically missing the relevant challenge resource as a prerequisite for each target.
+$(skeletons): scripts/generate_skeleton.py resources/challenges.json
+	mkdir -p "$(@D)"
+	challenge_id=$$(jq --raw-output '.data | map(select("\(.category)/\(.name)" == "$(subst ','"'"',$(@:challenges/%/README.md=%))")) | first | .id' resources/challenges.json) && \
+	scripts/generate_skeleton.py --output "$@" resources/challenges/$${challenge_id}.json
+
+README.md: scripts/generate_index.py resources/challenges.json
+	scripts/generate_index.py --output $@ resources/challenges.json
+
+.PHONY: all all-resources all-files all-skeletons
