@@ -1,0 +1,17 @@
+[ec2-user@ip-172-30-0-38 ~]$ ./crack
+t = 1718214278
+For phase 1, trying seed = 1718214273 (t-5)... does the passcode [000001] work? (y/n) n
+For phase 1, trying seed = 1718214274 (t-4)... does the passcode [110000] work? (y/n) n
+For phase 1, trying seed = 1718214275 (t-3)... does the passcode [110111] work? (y/n) n
+For phase 1, trying seed = 1718214276 (t-2)... does the passcode [111101] work? (y/n) n
+For phase 1, trying seed = 1718214277 (t-1)... does the passcode [001011] work? (y/n) n
+For phase 1, trying seed = 1718214278 (t+0)... does the passcode [100011] work? (y/n) y
+For phase 2, the passcode should be [000100].
+For phase 3, the passcode should be [000100].
+For phase 4, the passcode should be [110111].
+For phase 5, the passcode should be [101111].
+For phase 6, the passcode should be [000111].
+For phase 7, the passcode should be [000111].
+For phase 8, the passcode should be [011001].
+For phase 9, the passcode should be [100111].
+For phase 10, the passcode should be [100011].

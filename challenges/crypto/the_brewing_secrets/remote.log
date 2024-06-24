@@ -1,0 +1,82 @@
+puxlit@kiara:~/Sandbox$ nc chals.jellyc.tf 6000
+
+
+Starting phase_number 1...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+000001
+Passcode incorrect. Try again!
+110000
+Passcode incorrect. Try again!
+110111
+Passcode incorrect. Try again!
+111101
+Passcode incorrect. Try again!
+001011
+Passcode incorrect. Try again!
+100011
+Phase number 1 - validation result: 1
+
+
+Starting phase_number 2...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+000100
+Phase number 2 - validation result: 1
+
+
+Starting phase_number 3...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+000100
+Phase number 3 - validation result: 1
+
+
+Starting phase_number 4...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+110111
+Phase number 4 - validation result: 1
+
+
+Starting phase_number 5...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+101111
+Phase number 5 - validation result: 1
+
+
+Starting phase_number 6...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+000111
+Phase number 6 - validation result: 1
+
+
+Starting phase_number 7...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+000111
+Phase number 7 - validation result: 1
+
+
+Starting phase_number 8...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+011001
+Phase number 8 - validation result: 1
+
+
+Starting phase_number 9...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+100111
+Phase number 9 - validation result: 1
+
+
+Starting phase_number 10...
+WARNING: System will timeout after 69 entries
+Enter 6-digit binary passcode  
+100011
+Phase number 10 - validation result: 1
+Validation successful. Unlocking garage door: jellyCTF{mad3_w1th_99_percent_l0v3_and_1_percent_sad_g1rl_t3ars}

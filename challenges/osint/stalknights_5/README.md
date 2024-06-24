@@ -15,3 +15,9 @@ Flag format: `jellyCTF{flag_on_profile_page}`
 Note: The results of previous challenges are not relevant for this challenges (though clues from those sites may help)
 
 ---
+
+raw notes:
+
+  - <https://leetcode.com/u/starknight1337/> ![:tearsofjoy:](https://cdn.discordapp.com/emojis/1075452690743697458.png?size=20)
+  - the flag is `jellyCTF{1337code_0n_str34m}`
+  - meta: this was the last challenge we completed. I guess in retrospect "starnerd" and the GitHub account should've clued us in, but… hoo boy… we put too much stock in red herrings like the Twitch account, Roblox account, PSN profile, and Xbox gamertag… ![:TodoJoy:](https://cdn.discordapp.com/emojis/528201545167405087.png?size=20)

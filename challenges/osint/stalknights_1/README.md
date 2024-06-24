@@ -12,3 +12,11 @@ Stumbled across this Starknight while scrolling through Instagram. Can you figur
 Flag format: `jellyCTF{neighbourhood_name,country}` (all lowercase)
 
 ---
+
+raw notes:
+
+  - post caption reads:
+    > Jelly's coffee announcement reminded me of the ancient coffee I saw on my last holiday 😂
+  - reverse image search brings up the [Albert Heijn Museum Shop](https://albertheijnerfgoed.nl/museumwinkel) on <https://www.travelwithsimina.com/one-day-in-zaanse-schans/>
+  - flag is `jellyCTF{zaanse_schans,netherlands}`
+  - meta: I initially tried `jellyCTF{zaandam,netherlands}`, but apparently [Zaandam](https://en.wikipedia.org/wiki/Zaandam) is a city, whereas [Zaanse Schans](https://en.wikipedia.org/wiki/Zaanse_Schans) is a "neighbourhood" of Zaandam

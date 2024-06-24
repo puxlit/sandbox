@@ -1,0 +1,1 @@
+curl -e 'https://therealtruthaboutjellyhoshiumi.carrd.co/' -L -o 'image01.png' 'https://therealtruthaboutjellyhoshiumi.carrd.co/assets/images/image01.png?v=d5ca6bfd'

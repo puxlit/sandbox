@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+# jellyCTF{g0d_d4mn_cL4nk3r5}

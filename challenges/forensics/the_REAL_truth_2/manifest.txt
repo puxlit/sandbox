@@ -1,0 +1,3 @@
+curl -L -o 'sitemap.xml' 'https://therealtruthaboutjellyhoshiumi.carrd.co/sitemap.xml'
+curl -L -o 'image01.png' 'https://therealtruthaboutjellyhoshiumi.carrd.co/assets/images/image01.png'
+curl -L -o 'image02.png' 'https://therealtruthaboutjellyhoshiumi.carrd.co/assets/images/image02.png'

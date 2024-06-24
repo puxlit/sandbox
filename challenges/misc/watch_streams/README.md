@@ -5,3 +5,7 @@
 </tbody></table>
 
 ---
+
+raw notes:
+
+  - flag is in the description for <https://www.youtube.com/watch?v=QH8LKkIVHzI>: `jellyCTF{jerrywashere123}`

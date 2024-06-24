@@ -16,3 +16,9 @@ if you're having problems with the tool, try using a version prior to commit e5a
 20 point hint: how to use it
 
 ---
+
+raw notes:
+
+  - pick your poison to grab NTLM hashes; I went with [`mimikatz`](https://github.com/gentilkiwi/mimikatz)
+  - load dump into windbg, follow the documented process. NTLM hash for user `jelly` is `aa05ab5319d59779b937bdbf9797d895`
+  - throw into <https://crackstation.net/>, password is `jellynerd2`

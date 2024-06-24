@@ -13,3 +13,8 @@ My radio picked up some weird interference -
 I'm sure it's aliens but nobody believes me!!!
 
 ---
+
+raw notes:
+
+  - TODO: spectrum analyser screenshot
+  - flag is `jellyCTF{youre_hearing_things}`
