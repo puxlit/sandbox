@@ -1,7 +1,7 @@
 # [forensics] oshi_mark
 
 <table><tbody>
-<tr><th>Value</th><td>842 pts</td></tr>
+<tr><th>Value</th><td>951 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>Meow Mix</td></tr>
 </tbody></table>

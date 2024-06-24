@@ -1,7 +1,7 @@
 # [pwn] phase_coffee_1
 
 <table><tbody>
-<tr><th>Value</th><td>100 pts</td></tr>
+<tr><th>Value</th><td>296 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Connection info</th><td><code>nc chals.jellyc.tf 5000</code></td></tr>

@@ -1,7 +1,7 @@
 # [rev] awassmbely
 
 <table><tbody>
-<tr><th>Value</th><td>188 pts</td></tr>
+<tr><th>Value</th><td>771 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>lisp_beamer</td></tr>
 <tr><th>Files</th><td><a href="./files/code.s">code.s</a></td></tr>

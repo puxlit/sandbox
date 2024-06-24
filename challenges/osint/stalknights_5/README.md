@@ -1,7 +1,7 @@
 # [osint] stalknights_5
 
 <table><tbody>
-<tr><th>Value</th><td>908 pts</td></tr>
+<tr><th>Value</th><td>971 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 </tbody></table>

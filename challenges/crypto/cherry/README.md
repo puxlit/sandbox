@@ -1,7 +1,7 @@
 # [crypto] cherry
 
 <table><tbody>
-<tr><th>Value</th><td>856 pts</td></tr>
+<tr><th>Value</th><td>957 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>Meow Mix</td></tr>
 <tr><th>Connection info</th><td><a href="https://cherry.jellyc.tf/">https://cherry.jellyc.tf/</a></td></tr>

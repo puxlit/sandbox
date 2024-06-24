@@ -1,7 +1,7 @@
 # [web] awafy_me
 
 <table><tbody>
-<tr><th>Value</th><td>100 pts</td></tr>
+<tr><th>Value</th><td>553 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Connection info</th><td><a href="https://awafy-me.jellyc.tf/">https://awafy-me.jellyc.tf/</a></td></tr>

@@ -1,7 +1,7 @@
 # [osint] into_the_atmosphere
 
 <table><tbody>
-<tr><th>Value</th><td>453 pts</td></tr>
+<tr><th>Value</th><td>849 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 </tbody></table>

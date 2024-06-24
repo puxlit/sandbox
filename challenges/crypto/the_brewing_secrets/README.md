@@ -1,7 +1,7 @@
 # [crypto] the_brewing_secrets
 
 <table><tbody>
-<tr><th>Value</th><td>708 pts</td></tr>
+<tr><th>Value</th><td>919 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Connection info</th><td><code>nc chals.jellyc.tf 6000</code></td></tr>

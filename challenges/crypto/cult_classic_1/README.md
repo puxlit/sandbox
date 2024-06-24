@@ -1,7 +1,7 @@
 # [crypto] cult_classic_1
 
 <table><tbody>
-<tr><th>Value</th><td>100 pts</td></tr>
+<tr><th>Value</th><td>335 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Files</th><td><a href="./files/01.zip">01.zip</a> · <a href="./files/01_welcome.txt">01_welcome.txt</a></td></tr>

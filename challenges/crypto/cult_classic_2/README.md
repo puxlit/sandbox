@@ -1,7 +1,7 @@
 # [crypto] cult_classic_2
 
 <table><tbody>
-<tr><th>Value</th><td>521 pts</td></tr>
+<tr><th>Value</th><td>860 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 </tbody></table>

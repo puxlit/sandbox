@@ -1,7 +1,7 @@
 # [crypto] you're_based
 
 <table><tbody>
-<tr><th>Value</th><td>757 pts</td></tr>
+<tr><th>Value</th><td>935 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 </tbody></table>

@@ -1,7 +1,7 @@
 # [forensics] alien_transmission
 
 <table><tbody>
-<tr><th>Value</th><td>100 pts</td></tr>
+<tr><th>Value</th><td>373 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Files</th><td><a href="./files/alien_transmission.mp3">alien_transmission.mp3</a></td></tr>

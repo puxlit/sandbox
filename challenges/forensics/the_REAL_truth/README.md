@@ -1,7 +1,7 @@
 # [forensics] the_REAL_truth
 
 <table><tbody>
-<tr><th>Value</th><td>335 pts</td></tr>
+<tr><th>Value</th><td>806 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 <tr><th>Connection info</th><td><a href="https://therealtruthaboutjellyhoshiumi.carrd.co/">https://therealtruthaboutjellyhoshiumi.carrd.co/</a></td></tr>
