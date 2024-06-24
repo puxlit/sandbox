@@ -27,7 +27,7 @@ def generate_index(output_file: TextIO, challenges_file: TextIO) -> None:
         for challenge in category_challenges:
             name = challenge['name']
             value = challenge['value']
-            output_file.write(f'      - [{name}](./challenges/{category}/{name}/README.md) ({value} pts)\n')
+            output_file.write(f"      - [{name}](./challenges/{category}/{name.replace('?', '%3F')}/README.md) ({value} pts)\n")
 
 
 def main() -> None:
