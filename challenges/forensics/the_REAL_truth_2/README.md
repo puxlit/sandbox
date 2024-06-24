@@ -24,5 +24,7 @@ raw notes:
   - sitemap (<https://therealtruthaboutjellyhoshiumi.carrd.co/sitemap.xml> ([archived](./sitemap.xml))) indicates that, in addition to `image01.png`, there's an `image02.png`
   - most apparent difference is the lack of cyan at the top of `image02.png`
   - try diffing the two images: `magick composite image02.png image01.png -compose difference imagediff.png`
+
+    ![](./imagediff.png)
   - flag is `jellyCTF{tw0_h41v3s_m4k3_a_wh0L3}`
   - meta: I got this before [[forensics] the_REAL_truth](../the_REAL_truth/README.md) and thought this was the flag to the first part. ideally, the challenge descriptions should be clearer about which flag goes where

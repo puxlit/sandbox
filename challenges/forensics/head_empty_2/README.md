@@ -26,6 +26,7 @@ raw notes:
     _keyhttps://abs.twimg.com/responsive-web/client-web-legacy/shared~bundle.UserLists~loader.ListHandler~ondemand.HoverCard.1fd8459a.js
     ```
   - throw the memory dump in GIMP, start with the speculative width/height, assume buffer is RGBA, scrub through offsets, adjust dimensions as needed
+
     ![](./dumpy.png)
   - flag is `jellyCTF{pa1nt_pr1nc355}`
   - meta: so I did notice Twitter image-like filenames when exploratorily `strings`ing in [[forensics] head_empty](../head_empty/README.md), and thought that <https://pbs.twimg.com/media/GMjcaebbcAAoc7D.png:orig> was an Easter egg

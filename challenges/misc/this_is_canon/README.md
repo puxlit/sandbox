@@ -8,6 +8,7 @@
 </tbody></table>
 
 Is this meme still relevant?
+
 ![](./files/canon_meme.jpg)
 
 Note: Flag format for this challenge is all lowercase: `jellyctf{lowercase_letters}`
