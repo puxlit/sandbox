@@ -1,7 +1,7 @@
 # [web] vlookup_hot_singles_2
 
 <table><tbody>
-<tr><th>Value</th><td>687 pts</td></tr>
+<tr><th>Value</th><td>911 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 <tr><th>Connection info</th><td><a href="https://vlookup-hot-singles.jellyc.tf/">https://vlookup-hot-singles.jellyc.tf/</a></td></tr>

@@ -1,7 +1,7 @@
 # [crypto] dizzy_fishman
 
 <table><tbody>
-<tr><th>Value</th><td>608 pts</td></tr>
+<tr><th>Value</th><td>896 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Connection info</th><td><code>nc chals.jellyc.tf 4000</code></td></tr>

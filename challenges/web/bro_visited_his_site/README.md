@@ -1,7 +1,7 @@
 # [web] bro_visited_his_site
 
 <table><tbody>
-<tr><th>Value</th><td>100 pts</td></tr>
+<tr><th>Value</th><td>343 pts</td></tr>
 <tr><th>Tags</th><td><code>easy</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 <tr><th>Connection info</th><td><a href="https://bro-visited-his-site.jellyc.tf/">https://bro-visited-his-site.jellyc.tf/</a></td></tr>

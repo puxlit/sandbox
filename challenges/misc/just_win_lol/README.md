@@ -1,7 +1,7 @@
 # [misc] just_win_lol
 
 <table><tbody>
-<tr><th>Value</th><td>890 pts</td></tr>
+<tr><th>Value</th><td>966 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 <tr><th>Connection info</th><td><a href="https://just-win-lol.jellyc.tf/">https://just-win-lol.jellyc.tf/</a></td></tr>

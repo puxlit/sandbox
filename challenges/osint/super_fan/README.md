@@ -1,7 +1,7 @@
 # [osint] super_fan
 
 <table><tbody>
-<tr><th>Value</th><td>842 pts</td></tr>
+<tr><th>Value</th><td>955 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 </tbody></table>

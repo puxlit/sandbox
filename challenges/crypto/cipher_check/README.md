@@ -1,7 +1,7 @@
 # [crypto] cipher_check
 
 <table><tbody>
-<tr><th>Value</th><td>136 pts</td></tr>
+<tr><th>Value</th><td>766 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>Meow Mix</td></tr>
 <tr><th>Files</th><td><a href="./files/cipher_check.zip">cipher_check.zip</a></td></tr>

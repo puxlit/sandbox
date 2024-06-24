@@ -1,7 +1,7 @@
 # [forensics] head_empty
 
 <table><tbody>
-<tr><th>Value</th><td>410 pts</td></tr>
+<tr><th>Value</th><td>842 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 <tr><th>Files</th><td><a href="./files/memory.dmp.gz">memory.dmp.gz</a></td></tr>

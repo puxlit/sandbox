@@ -1,7 +1,7 @@
 # [forensics] head_empty_2
 
 <table><tbody>
-<tr><th>Value</th><td>871 pts</td></tr>
+<tr><th>Value</th><td>961 pts</td></tr>
 <tr><th>Tags</th><td><code>hard</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 </tbody></table>

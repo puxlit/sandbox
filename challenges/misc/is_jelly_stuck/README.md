@@ -1,7 +1,7 @@
 # [misc] is_jelly_stuck
 
 <table><tbody>
-<tr><th>Value</th><td>849 pts</td></tr>
+<tr><th>Value</th><td>961 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>Meow Mix</td></tr>
 <tr><th>Files</th><td><a href="./files/clues.txt">clues.txt</a> · <a href="./files/upload_me_to_google_drive_if_you_want.xlsx">upload_me_to_google_drive_if_you_want.xlsx</a> · <a href="./files/grid.png">grid.png</a></td></tr>

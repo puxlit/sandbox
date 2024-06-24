@@ -1,7 +1,7 @@
 # [crypto] you're_bababased?
 
 <table><tbody>
-<tr><th>Value</th><td>884 pts</td></tr>
+<tr><th>Value</th><td>966 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>Sheepiroo</td></tr>
 <tr><th>Files</th><td><a href="./files/list_of_safe_unicode_chars.txt">list_of_safe_unicode_chars.txt</a></td></tr>

@@ -1,7 +1,7 @@
 # [osint] secret_engineering_roleplay
 
 <table><tbody>
-<tr><th>Value</th><td>380 pts</td></tr>
+<tr><th>Value</th><td>838 pts</td></tr>
 <tr><th>Tags</th><td><code>medium</code></td></tr>
 <tr><th>Author</th><td>arepi</td></tr>
 </tbody></table>
