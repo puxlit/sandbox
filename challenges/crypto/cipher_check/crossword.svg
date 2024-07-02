@@ -1,0 +1,109 @@
+<svg height="288" viewBox=".5 .5 8 8" width="288" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    text { font-family: Verdana, sans-serif; }
+  </style>
+  <defs>
+    <pattern id="checker" height="2" patternTransform="translate(-.5 -.5)" patternUnits="userSpaceOnUse" width="2">
+      <rect fill="#fff" height="2" width="2" x="0" y="0"/>
+      <rect fill="#f3f3f3" height="1" width="1" x="1" y="0"/>
+      <rect fill="#f3f3f3" height="1" width="1" x="0" y="1"/>
+    </pattern>
+  </defs>
+  <rect fill="url(#checker)" height="8" width="8" x=".5" y=".5"/>
+  <g dominant-baseline="auto" fill="#434343" font-size=".25" text-anchor="end" transform="translate(.48 .48)">
+    <text x="1" y="1">a8</text>
+    <text x="2" y="1">b8</text>
+    <text x="3" y="1">c8</text>
+    <text x="4" y="1">d8</text>
+    <text x="5" y="1">e8</text>
+    <text x="6" y="1">f8</text>
+    <text x="7" y="1">g8</text>
+    <text x="8" y="1">h8</text>
+    <text x="1" y="2">a7</text>
+    <text x="5" y="2">e7</text>
+    <text x="1" y="3">a6</text>
+    <text x="5" y="3">e6</text>
+    <text x="1" y="4">a5</text>
+    <text x="5" y="4">e5</text>
+    <text x="1" y="5">a4</text>
+    <text x="2" y="5">b4</text>
+    <text x="3" y="5">c4</text>
+    <text x="4" y="5">d4</text>
+    <text x="5" y="5">e4</text>
+    <text x="6" y="5">f4</text>
+    <text x="7" y="5">g4</text>
+    <text x="8" y="5">h4</text>
+    <text x="1" y="6">a3</text>
+    <text x="5" y="6">e3</text>
+    <text x="1" y="7">a2</text>
+    <text x="5" y="7">e2</text>
+    <text x="1" y="8">a1</text>
+    <text x="5" y="8">e1</text>
+  </g>
+  <g dominant-baseline="central" fill="#000" font-size=".6" text-anchor="middle">
+    <text x="1" y="1">F</text>
+    <text x="2" y="1">O</text>
+    <text x="3" y="1">L</text>
+    <text x="4" y="1">L</text>
+    <text x="5" y="1">O</text>
+    <text x="6" y="1">W</text>
+    <text x="7" y="1">M</text>
+    <text x="8" y="1">O</text>
+    <text x="1" y="2">I</text>
+    <text x="2" y="2">S</text>
+    <text x="3" y="2">T</text>
+    <text x="4" y="2">D</text>
+    <text x="5" y="2">U</text>
+    <text x="6" y="2">E</text>
+    <text x="7" y="2">L</text>
+    <text x="8" y="2">X</text>
+    <text x="1" y="3">Q</text>
+    <text x="2" y="3">C</text>
+    <text x="3" y="3">I</text>
+    <text x="4" y="3">N</text>
+    <text x="5" y="3">D</text>
+    <text x="6" y="3">E</text>
+    <text x="7" y="3">T</text>
+    <text x="8" y="3">A</text>
+    <text x="1" y="4">I</text>
+    <text x="2" y="4">L</text>
+    <text x="3" y="4">O</text>
+    <text x="4" y="4">N</text>
+    <text x="5" y="4">S</text>
+    <text x="6" y="4">P</text>
+    <text x="7" y="4">E</text>
+    <text x="8" y="4">C</text>
+    <text x="1" y="5">I</text>
+    <text x="2" y="5">A</text>
+    <text x="3" y="5">L</text>
+    <text x="4" y="5">L</text>
+    <text x="5" y="5">I</text>
+    <text x="6" y="5">N</text>
+    <text x="7" y="5">E</text>
+    <text x="8" y="5">U</text>
+    <text x="1" y="6">P</text>
+    <text x="2" y="6">E</text>
+    <text x="3" y="6">V</text>
+    <text x="4" y="6">E</text>
+    <text x="5" y="6">N</text>
+    <text x="6" y="6">T</text>
+    <text x="7" y="6">H</text>
+    <text x="8" y="6">E</text>
+    <text x="1" y="7">W</text>
+    <text x="2" y="7">O</text>
+    <text x="3" y="7">N</text>
+    <text x="4" y="7">M</text>
+    <text x="5" y="7">A</text>
+    <text x="6" y="7">T</text>
+    <text x="7" y="7">E</text>
+    <text x="8" y="7">I</text>
+    <text x="1" y="8">N</text>
+    <text x="2" y="8">6</text>
+    <text x="3" y="8">M</text>
+    <text x="4" y="8">O</text>
+    <text x="5" y="8">V</text>
+    <text x="6" y="8">E</text>
+    <text x="7" y="8">S</text>
+    <text x="8" y="8">!</text>
+  </g>
+</svg>

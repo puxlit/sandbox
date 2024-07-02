@@ -26,6 +26,9 @@ Decoding ciphers may be tricky, especially when you're new to CTFs, but...
 
 raw notes:
 
+  - crossword
+
+    ![](./crossword.svg)
   - across
     <table><thead>
     <tr><th>#</th><th>Clue</th><th>Answer</th><th>Notes</th></tr>
@@ -72,5 +75,21 @@ raw notes:
   - game in question: <https://www.chess.com/game/live/4977461657>
   - clip for amusement: <https://www.youtube.com/watch?v=e91M0XLX7Jw>
   - take the coordinates for each of the 12 chess moves, and map to the corresponding letter in crossword coordinates, yielding: `ISTILLLOVEIT`
+    <table><thead>
+    <tr><th>Chessboard</th><th>Crossword</th><th>Move → letter</th></tr>
+    </thead><tbody>
+    <tr><td><img alt="" height="144" src="./chessboard-01.png" width="144"/></td><td><img alt="" height="144" src="./crossword-01.png" width="144"/></td><td><code>e4</code> → <code>I</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-02.png" width="144"/></td><td><img alt="" height="144" src="./crossword-02.png" width="144"/></td><td><code>e5</code> → <code>S</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-03.png" width="144"/></td><td><img alt="" height="144" src="./crossword-03.png" width="144"/></td><td><code>Nf3</code> → <code>T</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-04.png" width="144"/></td><td><img alt="" height="144" src="./crossword-04.png" width="144"/></td><td><code>Nc6</code> → <code>I</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-05.png" width="144"/></td><td><img alt="" height="144" src="./crossword-05.png" width="144"/></td><td><code>d4</code> → <code>L</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-06.png" width="144"/></td><td><img alt="" height="144" src="./crossword-06.png" width="144"/></td><td><code>exd4</code> → <code>L</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-07.png" width="144"/></td><td><img alt="" height="144" src="./crossword-07.png" width="144"/></td><td><code>Nxd4</code> → <code>L</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-08.png" width="144"/></td><td><img alt="" height="144" src="./crossword-08.png" width="144"/></td><td><code>Bc5</code> → <code>O</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-09.png" width="144"/></td><td><img alt="" height="144" src="./crossword-09.png" width="144"/></td><td><code>c3</code> → <code>V</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-10.png" width="144"/></td><td><img alt="" height="144" src="./crossword-10.png" width="144"/></td><td><code>Qf6</code> → <code>E</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-11.png" width="144"/></td><td><img alt="" height="144" src="./crossword-11.png" width="144"/></td><td><code>Nxc6</code> → <code>I</code></td></tr>
+    <tr><td><img alt="" height="144" src="./chessboard-12.png" width="144"/></td><td><img alt="" height="144" src="./crossword-12.png" width="144"/></td><td><code>Qxf2#</code> → <code>T</code></td></tr>
+    </tbody></table>
   - flag is `jellyCTF{ISTILLLOVEIT}`
   - meta: didn't figure out chess coordinates → crossword coordinates transformation until we'd first made the connection between the two stages in the similar [[misc] is_jelly_stuck](../../misc/is_jelly_stuck/README.md)
