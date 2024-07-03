@@ -98,3 +98,55 @@ raw notes:
     ```
   - flag is `jellyctf{jelly_your_homework_was_due_yesterday}`
   - meta: this is one of the handful of challenges that deviates from the `jellyCTF{}` flag wrapper
+
+addendum:
+
+  - if we didn't feel like decoding by hand…
+    ```pycon
+    >>> from typing import Optional
+    >>> def create_huffman_table(symbols_per_length: list[int], symbols: list[str]) -> list[Optional[tuple[str, int]]]:
+    ...     assert sum(symbols_per_length) == len(symbols)
+    ...     max_symbol_length = len(symbols_per_length)
+    ...     huffman_table: list[Optional[tuple[str, int]]] = [None] * (2 ** max_symbol_length)
+    ...     code_value = 0
+    ...     for (symbol_length, num_symbols) in enumerate(symbols_per_length, start=1):
+    ...         for symbol in symbols[:num_symbols]:
+    ...             shift_amount = max_symbol_length - symbol_length
+    ...             entries_to_fill = 2 ** shift_amount
+    ...             for lookup_value in range(code_value << shift_amount, (code_value << shift_amount) + entries_to_fill):
+    ...                 assert huffman_table[lookup_value] is None
+    ...                 huffman_table[lookup_value] = (symbol, symbol_length)
+    ...             code_value += 1
+    ...         symbols = symbols[num_symbols:]
+    ...         code_value <<= 1
+    ...     assert not symbols
+    ...     return huffman_table
+    ... 
+    >>> def is_power_of_two(n: int) -> bool:
+    ...     return (n != 0) and ((n & (n - 1)) == 0)
+    ... 
+    >>> def decode(huffman_table: list[Optional[tuple[str, int]]], encoded_string: tuple[int, int]) -> str:
+    ...     assert len(huffman_table) >= 2 and is_power_of_two(len(huffman_table))
+    ...     max_symbol_length = len(huffman_table).bit_length() - 1
+    ...     (encoded_length, encoded_bits) = encoded_string
+    ...     decoded_string = ''
+    ...     while encoded_length > 0:
+    ...         shift_amount = encoded_length - max_symbol_length
+    ...         lookup_value = encoded_bits >> shift_amount if shift_amount >= 0 else encoded_bits << -shift_amount
+    ...         result = huffman_table[lookup_value]
+    ...         assert result is not None
+    ...         (symbol, symbol_length) = result
+    ...         decoded_string += symbol
+    ...         encoded_length -= symbol_length
+    ...         encoded_bits &= ((2 ** encoded_length) - 1)
+    ...     assert encoded_length == 0
+    ...     return decoded_string
+    ... 
+    >>> symbols_per_length = [0, 0, 4, 3, 7, 6]
+    >>> symbols = ['_', 'e', 'l', 'y', 'j', 'o', 'r', 'a', 'c', 'd', 's', 't', 'u', 'w', 'f', 'h', 'k', 'm', '{', '}']
+    >>> encoded_bits = 0b1000001010010011101111101011101011111010000010100100110000111001110111010000111011100111110100111100100110101111000001110010110110010001100011011001000011001110011101000110101100010110011111111
+    >>> encoded_length = encoded_bits.bit_length()
+    >>> huffman_table = create_huffman_table(symbols_per_length, symbols)
+    >>> decode(huffman_table, (encoded_length, encoded_bits))
+    'jellyctf{jelly_your_homework_was_due_yesterday}'
+    ```

@@ -54,6 +54,7 @@ raw notes:
     ```
 
 addendum:
+
   - the [official solution](https://github.com/jellyctf/challenges/blob/662f1eb8d032f967076fb630b549ccbcf1996c9f/crypto/cherry/solve/solve.py) uses SymPy. since I skipped the number crunching by using Wolfram Alpha, now would be a good time to refresh some linear algebra (with the first ciphertext)
   - we can rewrite our system of linear congruences in the form $A \vec x \equiv \vec v \pmod m$:
 ```math
