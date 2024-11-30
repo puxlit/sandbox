@@ -1,0 +1,18 @@
+digraph {
+  node [shape=box]
+  node_1_0 [label="(1, 0)", style=filled, fillcolor=red, fontcolor=white]
+  node_1_0 -> node_3_5 [label="14", style=dashed, color=red]
+  node_3_5 [label="(3, 5)", color=red]
+  node_3_5 -> node_5_13 [label="21", style=dashed]
+  node_3_5 -> node_11_3 [label="21", style=dashed, color=red]
+  node_5_13 [label="(5, 13)"]
+  node_5_13 -> node_13_13 [label="11", style=dashed]
+  node_5_13 -> node_21_22 [label="52", style=dashed]
+  node_11_3 [label="(11, 3)", color=red]
+  node_11_3 -> node_13_13 [label="23", style=dashed, color=red]
+  node_11_3 -> node_21_22 [label="44", style=dashed]
+  node_13_13 [label="(13, 13)", color=red]
+  node_13_13 -> node_21_22 [label="32", style=dashed, color=red]
+  node_13_13 -> node_21_22 [label="24", style=dashed]
+  node_21_22 [label="(21, 22)", style=filled, fillcolor=red, fontcolor=white]
+}
