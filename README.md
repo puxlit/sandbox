@@ -1,0 +1,15 @@
+# Advent of Code 2024
+
+## Restrictions
+
+  - Use vanilla Python 3.9 (and its standard library). Don't use third-party libraries; if I need to manipulate matrices or traverse graphs, I'll need to implement these algorithms myself.
+  - No soliciting help/hints from others, or using LLMs in any capacity. Manually looking up subproblems (such as specific algorithms) is permissible.
+  - Strive for performance. Solutions should take no more than a few seconds to compute on my mid-2011 MacBook Air.
+
+## Leaderboard
+
+```
+      --------Part 1--------   -------Part 2--------
+Day       Time   Rank  Score       Time  Rank  Score
+  1   03:01:25  17515      0          -     -      -
+```
