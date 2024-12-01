@@ -51,6 +51,42 @@ def sum_distances(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_occurrences(numbers: list[int]) -> dict[int, int]:
+    """
+    >>> sorted(count_occurrences([4, 3, 5, 3, 9, 3]).items())
+    [(3, 3), (4, 1), (5, 1), (9, 1)]
+    """
+    occurrences: dict[int, int] = {}
+    for number in numbers:
+        if number in occurrences:
+            occurrences[number] += 1
+        else:
+            occurrences[number] = 1
+    return occurrences
+
+
+def sum_similarity_scores(lines: Iterable[str]) -> int:
+    """
+    >>> sum_similarity_scores([
+    ...     '3   4',
+    ...     '4   3',
+    ...     '2   5',
+    ...     '1   3',
+    ...     '3   9',
+    ...     '3   3',
+    ... ])
+    31
+    """
+    (left_list, right_list) = parse_lists(lines)
+    occurrences = count_occurrences(right_list)
+    similarity_scores = (left_number * occurrences.get(left_number, 0) for left_number in left_list)
+    return sum(similarity_scores)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -65,6 +101,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_distances(lines))
+    elif args.part == 2:
+        print(sum_similarity_scores(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 

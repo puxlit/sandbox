@@ -9,7 +9,7 @@
 ## Leaderboard
 
 ```
-      --------Part 1--------   -------Part 2--------
-Day       Time   Rank  Score       Time  Rank  Score
-  1   03:01:25  17515      0          -     -      -
+      --------Part 1--------   --------Part 2--------
+Day       Time   Rank  Score       Time   Rank  Score
+  1   03:01:25  17515      0   03:13:21  16861      0
 ```
