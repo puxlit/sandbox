@@ -10,10 +10,13 @@ clean:
 	rm -f part_1_answer.txt
 
 clobber: clean
-	rm -f input.txt
+	rm -f input.txt input.txt.gpg
 
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/25/input'
+
+input.txt.gpg: input.txt
+	gpg --encrypt --default-recipient-self --output $@ --throw-keyids $<
 
 part_1_answer.txt: input_visualisation.svg laziness.py
 	sed -E -n 's/^<text text-anchor="middle" x="([0-9]+)".+$$/\1/p' input_visualisation.svg | sort -n | python3 laziness.py >$@
