@@ -13,10 +13,13 @@ clean:
 	rm -f part_1_answer.txt
 
 clobber: clean
-	rm -f input.txt
+	rm -f input.txt input.txt.gpg
 
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/5/input'
+
+input.txt.gpg: input.txt
+	gpg --encrypt --default-recipient-self --output $@ --throw-keyids $<
 
 part_1_answer.txt: if_you_give_a_seed_a_fertilizer.py input.txt
 	python3 if_you_give_a_seed_a_fertilizer.py 1 input.txt >$@
