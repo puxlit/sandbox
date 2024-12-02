@@ -13,10 +13,13 @@ clean:
 	rm -f part_1_answer.txt part_2_answer.txt
 
 clobber: clean
-	rm -f input.txt
+	rm -f input.txt input.txt.gpg
 
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/17/input'
+
+input.txt.gpg: input.txt
+	gpg --encrypt --default-recipient-self --output $@ --throw-keyids $<
 
 part_1_answer.txt: clumsy_crucible.py input.txt
 	python3 clumsy_crucible.py 1 input.txt >$@
