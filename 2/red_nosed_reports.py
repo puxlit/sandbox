@@ -61,6 +61,47 @@ def count_safe_reports(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def is_report_tolerable(levels: tuple[int, ...]) -> bool:
+    """
+    >>> is_report_tolerable((7, 6, 4, 2, 1))
+    True
+    >>> is_report_tolerable((1, 2, 7, 8, 9))
+    False
+    >>> is_report_tolerable((9, 7, 6, 2, 1))
+    False
+    >>> is_report_tolerable((1, 3, 2, 4, 5))
+    True
+    >>> is_report_tolerable((8, 6, 4, 4, 1))
+    True
+    >>> is_report_tolerable((1, 3, 6, 7, 9))
+    True
+    """
+    if is_report_safe(levels):
+        return True
+    # Given the limited number of levels and reports, it's easy to brute force this.
+    return any(map(is_report_safe, (levels[:i] + levels[i + 1:] for i in range(len(levels)))))
+
+
+def count_tolerable_reports(lines: Iterable[str]) -> int:
+    """
+    >>> count_tolerable_reports([
+    ...     '7 6 4 2 1',
+    ...     '1 2 7 8 9',
+    ...     '9 7 6 2 1',
+    ...     '1 3 2 4 5',
+    ...     '8 6 4 4 1',
+    ...     '1 3 6 7 9',
+    ... ])
+    4
+    """
+    reports = parse_reports(lines)
+    return sum(map(is_report_tolerable, reports))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -75,6 +116,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_safe_reports(lines))
+    elif args.part == 2:
+        print(count_tolerable_reports(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
