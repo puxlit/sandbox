@@ -10,10 +10,13 @@ check: cubes.py
 	python3 -m doctest -v cubes.py
 
 clean:
-	rm -f input.txt part_1_answer.txt
+	rm -f input.txt input.txt.gpg part_1_answer.txt
 
 input.txt:
 	curl -b 'session=$(SESSION_COOKIE_VALUE)' -o $@ 'https://adventofcode.com/2023/day/2/input'
+
+input.txt.gpg: input.txt
+	gpg --encrypt --default-recipient-self --output $@ --throw-keyids $<
 
 part_1_answer.txt: cubes.py input.txt
 	python3 cubes.py 1 input.txt >$@
