@@ -127,7 +127,7 @@ def is_report_safe(levels: tuple[int, ...], tolerance: int = 0, intertia: int = 
             # Try removing either of the pair of levels. For example, in the report "abcXYdef" where we're evaluating
             # the pair "XY", we've validated "abcX" as safe and will try the subreports "cYdef" and "Xdef".
             #
-            # If we have limited intertia (e.g. "aXYbcd"), we also need to try the subreport "YZbcd".
+            # If we have limited intertia (e.g. "aXYbcd"), we also need to try the subreport "XYbcd".
             #
             # If we're at the end of the report, we only need to remove the second of the pair of levels.
             limited_inertia = abs(intertia) == 1
