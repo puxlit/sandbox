@@ -26,10 +26,10 @@ class PrintJob(NamedTuple):
             # Handle blank line section delimiter.
             if not line:
                 break
-            (dependant_page, page) = map(int, line.split('|'))
-            dependant_pages = ordering_rules.setdefault(page, set())
-            assert dependant_page not in dependant_pages
-            dependant_pages.add(dependant_page)
+            (prerequisite_page, dependant_page) = map(int, line.split('|'))
+            prerequisite_pages = ordering_rules.setdefault(dependant_page, set())
+            assert prerequisite_page not in prerequisite_pages
+            prerequisite_pages.add(prerequisite_page)
 
         updates: list[tuple[int, ...]] = []
         for line in lines_iter:
@@ -37,7 +37,7 @@ class PrintJob(NamedTuple):
 
         return PrintJob(ordering_rules, tuple(updates))
 
-    def correctly_ordered_updates(self) -> Iterator[tuple[int, ...]]:
+    def filter_updates(self, *, correctly_ordered: bool) -> Iterator[tuple[int, ...]]:
         for update in self.updates:
             following_pages = set(update)
             # Expect no duplicate pages.
@@ -47,12 +47,76 @@ class PrintJob(NamedTuple):
                 following_pages.remove(page)
                 if page not in self.ordering_rules:
                     continue
-                missing_dependant_pages = self.ordering_rules[page] & following_pages
-                if missing_dependant_pages:
+                missing_prerequisite_pages = self.ordering_rules[page] & following_pages
+                if missing_prerequisite_pages:
                     is_correctly_ordered = False
                     break
-            if is_correctly_ordered:
+            if is_correctly_ordered == correctly_ordered:
                 yield update
+
+    def reorder_update(self, update: tuple[int, ...]) -> tuple[int, ...]:
+        """
+        >>> print_job = PrintJob.from_lines([
+        ...     '47|53',
+        ...     '97|13',
+        ...     '97|61',
+        ...     '97|47',
+        ...     '75|29',
+        ...     '61|13',
+        ...     '75|53',
+        ...     '29|13',
+        ...     '97|29',
+        ...     '53|29',
+        ...     '61|53',
+        ...     '97|53',
+        ...     '61|29',
+        ...     '47|13',
+        ...     '75|47',
+        ...     '97|75',
+        ...     '47|61',
+        ...     '75|61',
+        ...     '47|29',
+        ...     '75|13',
+        ...     '53|13',
+        ...     '',
+        ... ])
+        >>> print_job.reorder_update((75, 97, 47, 61, 53))
+        (97, 75, 47, 61, 53)
+        >>> print_job.reorder_update((61, 13, 29))
+        (61, 29, 13)
+        >>> print_job.reorder_update((97, 13, 75, 29, 47))
+        (97, 75, 47, 29, 13)
+        """
+        all_pages = set(update)
+        # Expect no duplicate pages.
+        assert len(all_pages) == len(update)
+
+        page_to_prerequisite_pages: dict[int, set[int]] = {}
+        page_to_dependant_pages: dict[int, set[int]] = {}
+        for page in update:
+            prerequisite_pages = self.ordering_rules.get(page, set()) & (all_pages - {page})
+            assert page not in page_to_prerequisite_pages
+            page_to_prerequisite_pages[page] = prerequisite_pages
+            page_to_dependant_pages.setdefault(page, set())
+            for prerequisite_page in prerequisite_pages:
+                page_to_dependant_pages.setdefault(prerequisite_page, set()).add(page)
+        assert len(page_to_prerequisite_pages) == len(page_to_dependant_pages) == len(update)
+
+        reordered_update: list[int] = []
+        while page_to_prerequisite_pages:
+            processed_pages: list[int] = []
+            for (page, prerequisite_pages) in page_to_prerequisite_pages.items():
+                if prerequisite_pages:
+                    continue
+                reordered_update.append(page)
+                processed_pages.append(page)
+                for dependant_page in page_to_dependant_pages[page]:
+                    assert page in page_to_prerequisite_pages[dependant_page]
+                    page_to_prerequisite_pages[dependant_page].remove(page)
+            assert len(processed_pages) > 0
+            for processed_page in processed_pages:
+                del page_to_prerequisite_pages[processed_page]
+        return tuple(reordered_update)
 
 
 ########################################################################################################################
@@ -107,7 +171,54 @@ def sum_middle_page_numbers_from_correctly_ordered_updates(lines: Iterable[str])
     143
     """
     print_job = PrintJob.from_lines(lines)
-    return sum(map(get_middle_page_number, print_job.correctly_ordered_updates()))
+    correctly_ordered_updates = print_job.filter_updates(correctly_ordered=True)
+    middle_page_numbers = map(get_middle_page_number, correctly_ordered_updates)
+    return sum(middle_page_numbers)
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def sum_middle_page_numbers_from_fixed_incorrectly_ordered_updates(lines: Iterable[str]) -> int:
+    """
+    >>> sum_middle_page_numbers_from_fixed_incorrectly_ordered_updates([
+    ...     '47|53',
+    ...     '97|13',
+    ...     '97|61',
+    ...     '97|47',
+    ...     '75|29',
+    ...     '61|13',
+    ...     '75|53',
+    ...     '29|13',
+    ...     '97|29',
+    ...     '53|29',
+    ...     '61|53',
+    ...     '97|53',
+    ...     '61|29',
+    ...     '47|13',
+    ...     '75|47',
+    ...     '97|75',
+    ...     '47|61',
+    ...     '75|61',
+    ...     '47|29',
+    ...     '75|13',
+    ...     '53|13',
+    ...     '',
+    ...     '75,47,61,53,29',
+    ...     '97,61,53,29,13',
+    ...     '75,29,13',
+    ...     '75,97,47,61,53',
+    ...     '61,13,29',
+    ...     '97,13,75,29,47',
+    ... ])
+    123
+    """
+    print_job = PrintJob.from_lines(lines)
+    incorrectly_ordered_updates = print_job.filter_updates(correctly_ordered=False)
+    fixed_incorrectly_ordered_updates = map(print_job.reorder_update, incorrectly_ordered_updates)
+    middle_page_numbers = map(get_middle_page_number, fixed_incorrectly_ordered_updates)
+    return sum(middle_page_numbers)
 
 
 ########################################################################################################################
@@ -125,6 +236,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_middle_page_numbers_from_correctly_ordered_updates(lines))
+    elif args.part == 2:
+        print(sum_middle_page_numbers_from_fixed_incorrectly_ordered_updates(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
