@@ -56,16 +56,12 @@ class WordSearch(NamedTuple):
         return WordSearch(width, height, tuple(rows), tuple(starting_xs), tuple(starting_as))
 
     def count_xmas_occurrences_at_position(self, x: int, y: int) -> int:
-        return sum((
-            self.check_xmas_at_position_and_radial(x, y, 1, 0),    # rightwards
-            self.check_xmas_at_position_and_radial(x, y, 1, 1),    # diagonally to the bottom-right
-            self.check_xmas_at_position_and_radial(x, y, 0, 1),    # downwards
-            self.check_xmas_at_position_and_radial(x, y, -1, 1),   # diagonally to the bottom-left
-            self.check_xmas_at_position_and_radial(x, y, -1, 0),   # leftwards
-            self.check_xmas_at_position_and_radial(x, y, -1, -1),  # diagonally to the top-left
-            self.check_xmas_at_position_and_radial(x, y, 0, -1),   # upwards
-            self.check_xmas_at_position_and_radial(x, y, 1, -1),   # diagonally to the top-right
-        ))
+        return sum(
+            self.check_xmas_at_position_and_radial(x, y, delta_x, delta_y)
+            for delta_y in (-1, 0, 1)
+            for delta_x in (-1, 0, 1)
+            if not (delta_x == delta_y == 0)
+        )
 
     def check_xmas_at_position_and_radial(self, x: int, y: int, x_delta: int, y_delta: int) -> bool:
         # Bounds check
