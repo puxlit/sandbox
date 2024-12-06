@@ -19,6 +19,14 @@ GUARD_TILE = '^'
 OBSTRUCTION_TILE = '#'
 
 
+PATROL_DIRECTIONS = (
+    (0, -1),  # Take a step north.
+    (1, 0),   # Take a step east.
+    (0, 1),   # Take a step south.
+    (-1, 0),  # Take a step west.
+)
+
+
 class Coordinate(NamedTuple):
     x: int
     y: int
@@ -62,15 +70,10 @@ class Map(NamedTuple):
         return Map(width, height, tuple(rows), starting_guard_position)
 
     def count_distinct_guard_visited_positions(self) -> int:
-        distinct_visited_positions = {self.starting_guard_position}
-        patrol_direction = cycle((
-            (0, -1),  # Take a step north.
-            (1, 0),   # Take a step east.
-            (0, 1),   # Take a step south.
-            (-1, 0),  # Take a step west.
-        ))
-        (curr_x, curr_y) = self.starting_guard_position
+        patrol_direction = cycle(PATROL_DIRECTIONS)
         (step_x, step_y) = next(patrol_direction)
+        (curr_x, curr_y) = self.starting_guard_position
+        distinct_visited_positions = {(curr_x, curr_y)}
         while True:
             (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
             if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
@@ -82,8 +85,41 @@ class Map(NamedTuple):
             else:
                 # Next step is empty. Move forward.
                 (curr_x, curr_y) = (next_x, next_y)
-                distinct_visited_positions.add(Coordinate(curr_x, curr_y))
+                distinct_visited_positions.add((curr_x, curr_y))
         return len(distinct_visited_positions)
+
+    def count_cycle_inducing_obstruction_positions(self) -> int:
+        obstruction_positions = 0
+        for candidate_y in range(self.height):
+            for candidate_x in range(self.width):
+                if self.rows[candidate_y][candidate_x]:
+                    # There's already an obstacle here.
+                    continue
+                if (candidate_x, candidate_y) == self.starting_guard_position:
+                    # The guard's going to notice if we spawn an obstruction on top of them.
+                    continue
+
+                patrol_direction = cycle(enumerate(PATROL_DIRECTIONS))
+                (direction, (step_x, step_y)) = next(patrol_direction)
+                (curr_x, curr_y) = self.starting_guard_position
+                distinct_visited_positions = {(curr_x, curr_y, direction)}
+                while True:
+                    (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
+                    if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
+                        # The guard's left the mapped area.
+                        break
+                    if self.rows[next_y][next_x] or ((next_x == candidate_x) and (next_y == candidate_y)):
+                        # Next step is an obstruction. Turn right.
+                        (direction, (step_x, step_y)) = next(patrol_direction)
+                    else:
+                        # Next step is empty. Move forward.
+                        (curr_x, curr_y) = (next_x, next_y)
+                        if (curr_x, curr_y, direction) in distinct_visited_positions:
+                            # We've entered a cycle!
+                            obstruction_positions += 1
+                            break
+                        distinct_visited_positions.add((curr_x, curr_y, direction))
+        return obstruction_positions
 
 
 ########################################################################################################################
@@ -111,6 +147,30 @@ def count_distinct_guard_visited_positions(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_cycle_inducing_obstruction_positions(lines: Iterable[str]) -> int:
+    """
+    >>> count_cycle_inducing_obstruction_positions([
+    ...     '....#.....',
+    ...     '.........#',
+    ...     '..........',
+    ...     '..#.......',
+    ...     '.......#..',
+    ...     '..........',
+    ...     '.#..^.....',
+    ...     '........#.',
+    ...     '#.........',
+    ...     '......#...',
+    ... ])
+    6
+    """
+    map_ = Map.from_lines(lines)
+    return map_.count_cycle_inducing_obstruction_positions()
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -125,6 +185,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_distinct_guard_visited_positions(lines))
+    elif args.part == 2:
+        print(count_cycle_inducing_obstruction_positions(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
