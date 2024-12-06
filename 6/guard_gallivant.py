@@ -5,7 +5,7 @@
 # Imports
 ########################################################################################################################
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from itertools import cycle
 from typing import NamedTuple, Optional
 
@@ -69,11 +69,11 @@ class Map(NamedTuple):
 
         return Map(width, height, tuple(rows), starting_guard_position)
 
-    def count_distinct_guard_visited_positions(self) -> int:
+    def guard_visited_positions(self) -> Iterator[Coordinate]:
         patrol_direction = cycle(PATROL_DIRECTIONS)
         (step_x, step_y) = next(patrol_direction)
         (curr_x, curr_y) = self.starting_guard_position
-        distinct_visited_positions = {(curr_x, curr_y)}
+        yield self.starting_guard_position
         while True:
             (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
             if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
@@ -85,40 +85,41 @@ class Map(NamedTuple):
             else:
                 # Next step is empty. Move forward.
                 (curr_x, curr_y) = (next_x, next_y)
-                distinct_visited_positions.add((curr_x, curr_y))
-        return len(distinct_visited_positions)
+                yield Coordinate(curr_x, curr_y)
 
     def count_cycle_inducing_obstruction_positions(self) -> int:
         obstruction_positions = 0
-        for candidate_y in range(self.height):
-            for candidate_x in range(self.width):
-                if self.rows[candidate_y][candidate_x]:
-                    # There's already an obstacle here.
-                    continue
-                if (candidate_x, candidate_y) == self.starting_guard_position:
-                    # The guard's going to notice if we spawn an obstruction on top of them.
-                    continue
+        evaluated_candidate_positions: set[Coordinate] = set()
+        for candidate_position in self.guard_visited_positions():
+            if candidate_position in evaluated_candidate_positions:
+                # We've already tried spawning an obstruction here.
+                continue
+            evaluated_candidate_positions.add(candidate_position)
+            if candidate_position == self.starting_guard_position:
+                # The guard's going to notice if we spawn an obstruction on top of them.
+                continue
+            (candidate_x, candidate_y) = candidate_position
 
-                patrol_direction = cycle(enumerate(PATROL_DIRECTIONS))
-                (direction, (step_x, step_y)) = next(patrol_direction)
-                (curr_x, curr_y) = self.starting_guard_position
-                distinct_visited_positions = {(curr_x, curr_y, direction)}
-                while True:
-                    (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
-                    if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
-                        # The guard's left the mapped area.
+            patrol_direction = cycle(enumerate(PATROL_DIRECTIONS))
+            (direction, (step_x, step_y)) = next(patrol_direction)
+            (curr_x, curr_y) = self.starting_guard_position
+            guard_visited_positions = {(curr_x, curr_y, direction)}
+            while True:
+                (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
+                if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
+                    # The guard's left the mapped area.
+                    break
+                if self.rows[next_y][next_x] or ((next_x == candidate_x) and (next_y == candidate_y)):
+                    # Next step is an obstruction. Turn right.
+                    (direction, (step_x, step_y)) = next(patrol_direction)
+                else:
+                    # Next step is empty. Move forward.
+                    (curr_x, curr_y) = (next_x, next_y)
+                    if (curr_x, curr_y, direction) in guard_visited_positions:
+                        # We've entered a cycle!
+                        obstruction_positions += 1
                         break
-                    if self.rows[next_y][next_x] or ((next_x == candidate_x) and (next_y == candidate_y)):
-                        # Next step is an obstruction. Turn right.
-                        (direction, (step_x, step_y)) = next(patrol_direction)
-                    else:
-                        # Next step is empty. Move forward.
-                        (curr_x, curr_y) = (next_x, next_y)
-                        if (curr_x, curr_y, direction) in distinct_visited_positions:
-                            # We've entered a cycle!
-                            obstruction_positions += 1
-                            break
-                        distinct_visited_positions.add((curr_x, curr_y, direction))
+                    guard_visited_positions.add((curr_x, curr_y, direction))
         return obstruction_positions
 
 
@@ -143,7 +144,8 @@ def count_distinct_guard_visited_positions(lines: Iterable[str]) -> int:
     41
     """
     map_ = Map.from_lines(lines)
-    return map_.count_distinct_guard_visited_positions()
+    distinct_guard_visited_positions = set(map_.guard_visited_positions())
+    return len(distinct_guard_visited_positions)
 
 
 ########################################################################################################################
