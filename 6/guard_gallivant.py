@@ -69,11 +69,11 @@ class Map(NamedTuple):
 
         return Map(width, height, tuple(rows), starting_guard_position)
 
-    def guard_visited_positions(self) -> Iterator[Coordinate]:
-        patrol_direction = cycle(PATROL_DIRECTIONS)
-        (step_x, step_y) = next(patrol_direction)
+    def guard_visited_positions(self) -> Iterator[tuple[int, int, int]]:
         (curr_x, curr_y) = self.starting_guard_position
-        yield self.starting_guard_position
+        patrol_direction = cycle(enumerate(PATROL_DIRECTIONS))
+        (direction, (step_x, step_y)) = next(patrol_direction)
+        yield (curr_x, curr_y, direction)
         while True:
             (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
             if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
@@ -81,16 +81,18 @@ class Map(NamedTuple):
                 break
             if self.rows[next_y][next_x]:
                 # Next step is an obstruction. Turn right.
-                (step_x, step_y) = next(patrol_direction)
+                (direction, (step_x, step_y)) = next(patrol_direction)
             else:
                 # Next step is empty. Move forward.
                 (curr_x, curr_y) = (next_x, next_y)
-                yield Coordinate(curr_x, curr_y)
+                yield (curr_x, curr_y, direction)
 
     def count_cycle_inducing_obstruction_positions(self) -> int:
         obstruction_positions = 0
+        old_guard_visited_positions = list(self.guard_visited_positions())
         evaluated_candidate_positions: set[Coordinate] = set()
-        for candidate_position in self.guard_visited_positions():
+        for (i, (candidate_x, candidate_y, _)) in enumerate(old_guard_visited_positions):
+            candidate_position = Coordinate(candidate_x, candidate_y)
             if candidate_position in evaluated_candidate_positions:
                 # We've already tried spawning an obstruction here.
                 continue
@@ -98,12 +100,18 @@ class Map(NamedTuple):
             if candidate_position == self.starting_guard_position:
                 # The guard's going to notice if we spawn an obstruction on top of them.
                 continue
-            (candidate_x, candidate_y) = candidate_position
+            # The first position in the old guard path is the starting position, which we should've skipped.
+            assert i > 0
 
+            (curr_x, curr_y, initial_direction) = old_guard_visited_positions[i - 1]
             patrol_direction = cycle(enumerate(PATROL_DIRECTIONS))
-            (direction, (step_x, step_y)) = next(patrol_direction)
-            (curr_x, curr_y) = self.starting_guard_position
-            guard_visited_positions = {(curr_x, curr_y, direction)}
+            while True:
+                (direction, (step_x, step_y)) = next(patrol_direction)
+                if direction == initial_direction:
+                    break
+            guard_visited_positions = set(old_guard_visited_positions[:i])
+            # The old guard path has no cycles, so there should be no duplicate position-and-direction tuples.
+            assert len(guard_visited_positions) == i
             while True:
                 (next_x, next_y) = (curr_x + step_x, curr_y + step_y)
                 if not ((0 <= next_x < self.width) and (0 <= next_y < self.height)):
@@ -144,7 +152,7 @@ def count_distinct_guard_visited_positions(lines: Iterable[str]) -> int:
     41
     """
     map_ = Map.from_lines(lines)
-    distinct_guard_visited_positions = set(map_.guard_visited_positions())
+    distinct_guard_visited_positions = set((x, y) for (x, y, _) in map_.guard_visited_positions())
     return len(distinct_guard_visited_positions)
 
 
