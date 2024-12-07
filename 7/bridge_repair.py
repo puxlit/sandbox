@@ -22,16 +22,6 @@ class Equation(NamedTuple):
         (test_value, operands) = line.split(': ')
         return Equation(int(test_value), tuple(int(operand) for operand in operands.split()))
 
-    def is_solvable_with_add_and_mul(self) -> bool:
-        goal = self.test_value
-        for operand in reversed(self.operands[1:]):
-            (quotient, remainder) = divmod(goal, operand)
-            if remainder == 0:
-                goal = quotient
-            else:
-                goal -= operand
-        return goal == self.operands[0]
-
 
 ########################################################################################################################
 # Part 1
@@ -40,6 +30,44 @@ class Equation(NamedTuple):
 def parse_equations(lines: Iterable[str]) -> Iterator[Equation]:
     for line in lines:
         yield Equation.from_line(line)
+
+
+def is_solvable_with_add_mul(goal: int, operands: tuple[int, ...]) -> bool:
+    """
+    >>> is_solvable_with_add_mul(190, (10, 19))
+    True
+    >>> is_solvable_with_add_mul(3267, (81, 40, 27))
+    True
+    >>> is_solvable_with_add_mul(292, (11, 6, 16, 20))
+    True
+
+    >>> is_solvable_with_add_mul(83, (17, 5))
+    False
+    >>> is_solvable_with_add_mul(156, (15, 6))
+    False
+    >>> is_solvable_with_add_mul(7290, (6, 8, 6, 15))
+    False
+    >>> is_solvable_with_add_mul(161011, (16, 10, 13))
+    False
+    >>> is_solvable_with_add_mul(192, (17, 8, 14))
+    False
+    >>> is_solvable_with_add_mul(21037, (9, 7, 18, 13))
+    False
+
+    >>> is_solvable_with_add_mul(49, (3, 14, 7))
+    True
+    """
+    assert len(operands) >= 1
+    for i in range(len(operands) - 1, 0, -1):
+        operand = operands[i]
+        (quotient, remainder) = divmod(goal, operand)
+        if remainder == 0:
+            if is_solvable_with_add_mul(goal - operand, operands[:i]):
+                return True
+            goal = quotient
+        else:
+            goal -= operand
+    return goal == operands[0]
 
 
 def sum_calibration_result(lines: Iterable[str]) -> int:
@@ -58,7 +86,7 @@ def sum_calibration_result(lines: Iterable[str]) -> int:
     3749
     """
     equations = parse_equations(lines)
-    return sum(equation.test_value for equation in equations if equation.is_solvable_with_add_and_mul())
+    return sum(equation.test_value for equation in equations if is_solvable_with_add_and_mul(*equation))
 
 
 ########################################################################################################################
@@ -76,6 +104,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_calibration_result(lines))
+    elif args.part == 1:
+        print(sum_calibration_result_with_cat(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
