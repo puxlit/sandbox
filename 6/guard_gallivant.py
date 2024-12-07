@@ -51,14 +51,6 @@ class Leg(NamedTuple):
     direction: PatrolDirection
     distance: int
 
-    @property
-    def end(self) -> Coordinate:
-        (curr_x, curr_y) = self.start
-        (step_x, step_y) = self.direction.value
-        curr_x += (self.distance * step_x)
-        curr_y += (self.distance * step_y)
-        return Coordinate(curr_x, curr_y)
-
     def steps(self) -> Iterable[Coordinate]:
         (curr_x, curr_y) = self.start
         (step_x, step_y) = self.direction.value
@@ -171,6 +163,7 @@ class Map(NamedTuple):
             else:
                 assert_never(direction)
             distance = abs(end_y - start_y)
+            end_x = start_x
         elif (direction == PatrolDirection.EAST) or (direction == PatrolDirection.WEST):
             row = self.rows[start_y]
             if (extra_obstruction is not None) and (extra_obstruction.y == start_y):
@@ -187,10 +180,11 @@ class Map(NamedTuple):
             else:
                 assert_never(direction)
             distance = abs(end_x - start_x)
+            end_y = start_y
         else:
             assert_never(direction)
         leg = Leg(start, direction, distance)
-        return (leg, leg.end if obstruction_hit else None)
+        return (leg, Coordinate(end_x, end_y) if obstruction_hit else None)
 
     def guard_legs(self, *, start: Optional[Coordinate] = None, direction: Optional[PatrolDirection] = None, extra_obstruction: Optional[Coordinate] = None) -> Iterator[Leg]:
         """
