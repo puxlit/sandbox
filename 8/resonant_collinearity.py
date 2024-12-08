@@ -6,6 +6,7 @@
 ########################################################################################################################
 
 from collections.abc import Iterable
+from itertools import combinations
 from typing import NamedTuple
 
 
@@ -33,13 +34,11 @@ class Map(NamedTuple):
     width: int
     height: int
     antennae: dict[str, set[Coordinate]]
-    antinodes: dict[str, set[Coordinate]]
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> 'Map':
         width = -1
         antennae: dict[str, set[Coordinate]] = {}
-        antinodes: dict[str, set[Coordinate]] = {}
         for (y, line) in enumerate(lines):
             # Ensure width is consistent across lines.
             if y == 0:
@@ -52,26 +51,30 @@ class Map(NamedTuple):
                 code_point = ord(tile)
                 if not ((48 <= code_point <= 57) or (65 <= code_point <= 90) or (97 <= code_point <= 122)):
                     raise ValueError(f'Encountered unexpected tile {repr(tile)} on line {y + 1} column {x + 1}')
-                antenna_location = Coordinate(x, y)
-                frequency_antennae = antennae.setdefault(tile, set())
-                frequency_antinodes = antinodes.setdefault(tile, set())
-                for other_antenna_location in frequency_antennae:
-                    frequency_antinodes.update(antenna_location.antinodes(other_antenna_location))
-                frequency_antennae.add(antenna_location)
+                antennae.setdefault(tile, set()).add(Coordinate(x, y))
         height = y + 1
-        return Map(width, height, antennae, antinodes)
+        return Map(width, height, antennae)
 
     def within_bounds(self, location: Coordinate) -> bool:
         return (0 <= location.x < self.width) and (0 <= location.y < self.height)
+
+    def count_unique_antinode_locations(self) -> int:
+        antinodes = set()
+        for frequency_antennae in self.antennae.values():
+            for (a, b) in combinations(frequency_antennae, 2):
+                for antinode_location in a.antinodes(b):
+                    if self.within_bounds(antinode_location):
+                        antinodes.add(antinode_location)
+        return len(antinodes)
 
 
 ########################################################################################################################
 # Part 1
 ########################################################################################################################
 
-def count_unique_antinode_locations_within_bounds(lines: Iterable[str]) -> int:
+def count_unique_antinode_locations(lines: Iterable[str]) -> int:
     """
-    >>> count_unique_antinode_locations_within_bounds([
+    >>> count_unique_antinode_locations([
     ...     '..........',
     ...     '..........',
     ...     '..........',
@@ -84,7 +87,7 @@ def count_unique_antinode_locations_within_bounds(lines: Iterable[str]) -> int:
     ...     '..........',
     ... ])
     2
-    >>> count_unique_antinode_locations_within_bounds([
+    >>> count_unique_antinode_locations([
     ...     '..........',
     ...     '..........',
     ...     '..........',
@@ -97,7 +100,7 @@ def count_unique_antinode_locations_within_bounds(lines: Iterable[str]) -> int:
     ...     '..........',
     ... ])
     4
-    >>> count_unique_antinode_locations_within_bounds([
+    >>> count_unique_antinode_locations([
     ...     '..........',
     ...     '..........',
     ...     '..........',
@@ -110,7 +113,7 @@ def count_unique_antinode_locations_within_bounds(lines: Iterable[str]) -> int:
     ...     '..........',
     ... ])
     4
-    >>> count_unique_antinode_locations_within_bounds([
+    >>> count_unique_antinode_locations([
     ...     '............',
     ...     '........0...',
     ...     '.....0......',
@@ -127,13 +130,7 @@ def count_unique_antinode_locations_within_bounds(lines: Iterable[str]) -> int:
     14
     """
     map_ = Map.from_lines(lines)
-    unique_antinode_locations_within_bounds = set(
-        antinode_location
-        for frequency_antinodes in map_.antinodes.values()
-        for antinode_location in frequency_antinodes
-        if map_.within_bounds(antinode_location)
-    )
-    return len(unique_antinode_locations_within_bounds)
+    return map_.count_unique_antinode_locations()
 
 
 ########################################################################################################################
@@ -150,7 +147,7 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(count_unique_antinode_locations_within_bounds(lines))
+        print(count_unique_antinode_locations(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
