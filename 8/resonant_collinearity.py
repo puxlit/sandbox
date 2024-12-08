@@ -5,7 +5,7 @@
 # Imports
 ########################################################################################################################
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from itertools import combinations
 from typing import NamedTuple
 
@@ -21,13 +21,30 @@ class Coordinate(NamedTuple):
     x: int
     y: int
 
-    def antinodes(self, other: 'Coordinate') -> tuple['Coordinate', 'Coordinate']:
+    def within_bounds(self, width: int, height: int) -> bool:
+        return (0 <= self.x < width) and (0 <= self.y < height)
+
+    def antinodes(self, other: 'Coordinate', *, width: int, height: int, include_resonant_harmonics: bool) -> Iterator['Coordinate']:
         delta_x = other.x - self.x
         delta_y = other.y - self.y
-        return (
-            Coordinate(self.x - delta_x, self.y - delta_y),
-            Coordinate(other.x + delta_x, other.y + delta_y),
-        )
+
+        if not include_resonant_harmonics:
+            location = Coordinate(self.x - delta_x, self.y - delta_y)
+            if location.within_bounds(width, height):
+                yield location
+            location = Coordinate(other.x + delta_x, other.y + delta_y)
+            if location.within_bounds(width, height):
+                yield location
+            return
+
+        location = self
+        while location.within_bounds(width, height):
+            yield location
+            location = Coordinate(location.x - delta_x, location.y - delta_y)
+        location = other
+        while location.within_bounds(width, height):
+            yield location
+            location = Coordinate(location.x + delta_x, location.y + delta_y)
 
 
 class Map(NamedTuple):
@@ -55,16 +72,12 @@ class Map(NamedTuple):
         height = y + 1
         return Map(width, height, antennae)
 
-    def within_bounds(self, location: Coordinate) -> bool:
-        return (0 <= location.x < self.width) and (0 <= location.y < self.height)
-
-    def count_unique_antinode_locations(self) -> int:
+    def count_unique_antinode_locations(self, *, include_resonant_harmonics: bool) -> int:
         antinodes = set()
         for frequency_antennae in self.antennae.values():
             for (a, b) in combinations(frequency_antennae, 2):
-                for antinode_location in a.antinodes(b):
-                    if self.within_bounds(antinode_location):
-                        antinodes.add(antinode_location)
+                for location in a.antinodes(b, width=self.width, height=self.height, include_resonant_harmonics=include_resonant_harmonics):
+                    antinodes.add(location)
         return len(antinodes)
 
 
@@ -130,7 +143,46 @@ def count_unique_antinode_locations(lines: Iterable[str]) -> int:
     14
     """
     map_ = Map.from_lines(lines)
-    return map_.count_unique_antinode_locations()
+    return map_.count_unique_antinode_locations(include_resonant_harmonics=False)
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_unique_antinode_locations_with_resonant_harmonics(lines: Iterable[str]) -> int:
+    """
+    >>> count_unique_antinode_locations_with_resonant_harmonics([
+    ...     'T.........',
+    ...     '...T......',
+    ...     '.T........',
+    ...     '..........',
+    ...     '..........',
+    ...     '..........',
+    ...     '..........',
+    ...     '..........',
+    ...     '..........',
+    ...     '..........',
+    ... ])
+    9
+    >>> count_unique_antinode_locations_with_resonant_harmonics([
+    ...     '............',
+    ...     '........0...',
+    ...     '.....0......',
+    ...     '.......0....',
+    ...     '....0.......',
+    ...     '......A.....',
+    ...     '............',
+    ...     '............',
+    ...     '........A...',
+    ...     '.........A..',
+    ...     '............',
+    ...     '............',
+    ... ])
+    34
+    """
+    map_ = Map.from_lines(lines)
+    return map_.count_unique_antinode_locations(include_resonant_harmonics=True)
 
 
 ########################################################################################################################
@@ -148,6 +200,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_unique_antinode_locations(lines))
+    elif args.part == 2:
+        print(count_unique_antinode_locations_with_resonant_harmonics(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
