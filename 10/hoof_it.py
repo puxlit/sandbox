@@ -7,7 +7,6 @@
 
 from collections import deque
 from collections.abc import Iterable, Iterator
-from heapq import heappop, heappush
 from typing import NamedTuple
 
 
@@ -171,9 +170,9 @@ class TopographicMap(NamedTuple):
         for trailhead in self.trailheads:
             rating = 0
             distinct_trails = {trailhead: 1}
-            to_visit = [(0, trailhead)]
+            to_visit = deque([(0, trailhead)])
             while to_visit:
-                (height, position) = heappop(to_visit)
+                (height, position) = to_visit.popleft()
                 distinct_trails_to_position = distinct_trails[position]
                 if height == 9:
                     rating += distinct_trails_to_position
@@ -182,7 +181,7 @@ class TopographicMap(NamedTuple):
                 for next_position in self.neighbours(position, next_height):
                     if next_position not in distinct_trails:
                         distinct_trails[next_position] = distinct_trails_to_position
-                        heappush(to_visit, (next_height, next_position))
+                        to_visit.append((next_height, next_position))
                     else:
                         distinct_trails[next_position] += distinct_trails_to_position
             ratings[trailhead] = rating
