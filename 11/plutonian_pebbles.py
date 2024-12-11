@@ -81,6 +81,15 @@ def count_stones_after_25_blinks(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_stones_after_75_blinks(lines: Iterable[str]) -> int:
+    stones = parse_stones(next(iter(lines)))
+    return count_stones_after_blinks(stones, 75)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -95,6 +104,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_stones_after_25_blinks(lines))
+    elif args.part == 2:
+        print(count_stones_after_75_blinks(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
