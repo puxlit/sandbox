@@ -19,7 +19,7 @@ CONFIG_LINE_TWO_PATTERN = re.compile(r'^Button B: X\+([1-9]\d*), Y\+([1-9]\d*)$'
 CONFIG_LINE_THREE_PATTERN = re.compile(r'^Prize: X=([1-9]\d*), Y=([1-9]\d*)$')
 A_BUTTON_TOKENS = 3
 B_BUTTON_TOKENS = 1
-MAX_BUTTON_PRESSES = 100
+PRIZE_OFFSET = 10000000000000
 
 
 class Solution(NamedTuple):
@@ -46,6 +46,9 @@ class ClawMachine(NamedTuple):
         (px, py) = map(int, match.groups())
         return ClawMachine(ax, ay, bx, by, px, py)
 
+    def correct_prize_coordinates(self) -> 'ClawMachine':
+        return ClawMachine(self.ax, self.ay, self.bx, self.by, self.px + PRIZE_OFFSET, self.py + PRIZE_OFFSET)
+
     def solve_cheapest_win(self) -> Optional[Solution]:
         """
         >>> ClawMachine.from_lines([
@@ -71,6 +74,31 @@ class ClawMachine(NamedTuple):
         ...     'Button B: X+27, Y+71',
         ...     'Prize: X=18641, Y=10279',
         ... ]).solve_cheapest_win() is None
+        True
+
+        >>> ClawMachine.from_lines([
+        ...     'Button A: X+94, Y+34',
+        ...     'Button B: X+22, Y+67',
+        ...     'Prize: X=10000000008400, Y=10000000005400',
+        ... ]).solve_cheapest_win() is None
+        True
+        >>> ClawMachine.from_lines([
+        ...     'Button A: X+26, Y+66',
+        ...     'Button B: X+67, Y+21',
+        ...     'Prize: X=10000000012748, Y=10000000012176',
+        ... ]).solve_cheapest_win() is not None
+        True
+        >>> ClawMachine.from_lines([
+        ...     'Button A: X+17, Y+86',
+        ...     'Button B: X+84, Y+37',
+        ...     'Prize: X=10000000007870, Y=10000000006450',
+        ... ]).solve_cheapest_win() is None
+        True
+        >>> ClawMachine.from_lines([
+        ...     'Button A: X+69, Y+23',
+        ...     'Button B: X+27, Y+71',
+        ...     'Prize: X=10000000018641, Y=10000000010279',
+        ... ]).solve_cheapest_win() is not None
         True
         """
         # Solve simultaneous equations with Cramer's rule. Assume minimising `3a + b` is a red herring.
@@ -102,6 +130,9 @@ class Arcade(NamedTuple):
             except StopIteration:
                 break
         return Arcade(tuple(claw_machines))
+
+    def correct_prize_coordinates(self) -> 'Arcade':
+        return Arcade(tuple(claw_machine.correct_prize_coordinates() for claw_machine in self.claw_machines))
 
 
 ########################################################################################################################
@@ -138,6 +169,19 @@ def sum_tokens_for_cheapest_wins(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def sum_tokens_for_cheapest_wins_with_corrected_prize_coordinates(lines: Iterable[str]) -> int:
+    arcade = Arcade.from_lines(lines).correct_prize_coordinates()
+    return sum(
+        solution.tokens
+        for claw_machine in arcade.claw_machines
+        if (solution := claw_machine.solve_cheapest_win()) is not None
+    )
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -152,6 +196,8 @@ def main() -> None:
 
     if args.part == 1:
         print(sum_tokens_for_cheapest_wins(lines))
+    elif args.part == 2:
+        print(sum_tokens_for_cheapest_wins_with_corrected_prize_coordinates(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
