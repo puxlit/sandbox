@@ -6,6 +6,8 @@
 ########################################################################################################################
 
 from collections.abc import Iterable
+from io import StringIO
+from itertools import count
 from math import prod
 import re
 from typing import NamedTuple
@@ -16,8 +18,13 @@ from typing import NamedTuple
 ########################################################################################################################
 
 ROBOT_CONFIG_PATTERN = re.compile(r'^p=(\d+),(\d+) v=(-?\d+),(-?\d+)$')
+
 VESTIBULE_WIDTH = 101
 VESTIBULE_HEIGHT = 103
+
+EMPTY_TILE = ord('.')
+ROBOT_TILE = ord('*')
+EASTER_EGG_FEATURE_TILES = b'*******'  # Empirically derived.
 
 
 class Robot(NamedTuple):
@@ -31,10 +38,10 @@ class Robot(NamedTuple):
         assert (match := ROBOT_CONFIG_PATTERN.fullmatch(line)) is not None
         return Robot(*map(int, match.groups()))
 
-    def simulate(self, duration: int) -> tuple[int, int]:
+    def simulate(self, time: int) -> tuple[int, int]:
         return (
-            self.x0 + (self.dx * duration),
-            self.y0 + (self.dy * duration),
+            self.x0 + (self.dx * time),
+            self.y0 + (self.dy * time),
         )
 
 
@@ -49,7 +56,7 @@ class Vestibule(NamedTuple):
         robots = tuple(map(Robot.from_line, lines))
         return Vestibule(width, height, robots)
 
-    def calculate_safety_factor(self, duration: int) -> int:
+    def calculate_safety_factor(self, time: int) -> int:
         """
         >>> Vestibule.from_lines(11, 7, [
         ...     'p=0,4 v=3,-3',
@@ -71,13 +78,38 @@ class Vestibule(NamedTuple):
         horizontal_divider = self.height // 2
         quadrant_counts = [0, 0, 0, 0]
         for robot in self.robots:
-            (x, y) = robot.simulate(duration)
+            (x, y) = robot.simulate(time)
             x %= self.width
             y %= self.height
             if (x == vertical_divider) or (y == horizontal_divider):
                 continue
             quadrant_counts[((y > horizontal_divider) * 2) + (x > vertical_divider)] += 1
         return prod(quadrant_counts)
+
+    def predict_time_until_next_easter_egg(self) -> tuple[int, str]:
+        frame_buffer_size = self.width * self.height
+        frame_buffer = bytearray(frame_buffer_size)
+        for time in count():
+            # Blank frame buffer.
+            for i in range(frame_buffer_size):
+                frame_buffer[i] = EMPTY_TILE
+            # Draw robots.
+            for robot in self.robots:
+                (x, y) = robot.simulate(time)
+                x %= self.width
+                y %= self.height
+                frame_buffer[(y * self.width) + x] = ROBOT_TILE
+            # "Detect" significant features.
+            if EASTER_EGG_FEATURE_TILES in frame_buffer:
+                break
+        rasterisation = StringIO()
+        for y in range(self.height):
+            leading_newline = '\n' if y > 0 else ''
+            offset_start = y * self.width
+            offset_end = (y + 1) * self.width
+            line = frame_buffer[offset_start:offset_end].decode()
+            rasterisation.write(leading_newline + line)
+        return (time, rasterisation.getvalue())
 
 
 ########################################################################################################################
@@ -87,6 +119,16 @@ class Vestibule(NamedTuple):
 def calculate_safety_factor_after_100_seconds(lines: Iterable[str]) -> int:
     vestibule = Vestibule.from_lines(VESTIBULE_WIDTH, VESTIBULE_HEIGHT, lines)
     return vestibule.calculate_safety_factor(100)
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def predict_time_until_next_easter_egg(lines: Iterable[str]) -> str:
+    vestibule = Vestibule.from_lines(VESTIBULE_WIDTH, VESTIBULE_HEIGHT, lines)
+    (time, rasterisation) = vestibule.predict_time_until_next_easter_egg()
+    return f'{time}\n\n{rasterisation}'
 
 
 ########################################################################################################################
@@ -104,6 +146,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_safety_factor_after_100_seconds(lines))
+    elif args.part == 2:
+        print(predict_time_until_next_easter_egg(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
