@@ -111,15 +111,74 @@ class Maze(NamedTuple):
             score = STEP_SCORE if (orientation == Orientation.EAST) else (TURN_SCORE + STEP_SCORE)
             yield (Coordinate(position.x + 1, position.y), Orientation.EAST, score)
 
-    def find_lowest_score_path(self) -> tuple[tuple[Orientation, ...], int]:
+    def find_lowest_score_paths(self) -> tuple[int, set[Coordinate]]:
+        """
+        >>> (lowest_score, positions_along_paths) = Maze.from_lines([
+        ...     '###############',
+        ...     '#.......#....E#',
+        ...     '#.#.###.#.###.#',
+        ...     '#.....#.#...#.#',
+        ...     '#.###.#####.#.#',
+        ...     '#.#.#.......#.#',
+        ...     '#.#.#####.###.#',
+        ...     '#...........#.#',
+        ...     '###.#.#####.#.#',
+        ...     '#...#.....#.#.#',
+        ...     '#.#.#.###.#.#.#',
+        ...     '#.....#...#.#.#',
+        ...     '#.###.#.#.#.#.#',
+        ...     '#S..#.....#...#',
+        ...     '###############',
+        ... ]).find_lowest_score_paths()
+        >>> lowest_score
+        7036
+        >>> sorted(positions_along_paths)
+        [Coordinate(x=1, y=9), Coordinate(x=1, y=10), Coordinate(x=1, y=11), Coordinate(x=1, y=12), Coordinate(x=1, y=13), Coordinate(x=2, y=9), Coordinate(x=2, y=11), Coordinate(x=3, y=7), Coordinate(x=3, y=8), Coordinate(x=3, y=9), Coordinate(x=3, y=10), Coordinate(x=3, y=11), Coordinate(x=4, y=7), Coordinate(x=4, y=11), Coordinate(x=5, y=7), Coordinate(x=5, y=8), Coordinate(x=5, y=9), Coordinate(x=5, y=10), Coordinate(x=5, y=11), Coordinate(x=6, y=7), Coordinate(x=7, y=7), Coordinate(x=8, y=7), Coordinate(x=9, y=7), Coordinate(x=10, y=7), Coordinate(x=11, y=7), Coordinate(x=11, y=8), Coordinate(x=11, y=9), Coordinate(x=11, y=10), Coordinate(x=11, y=11), Coordinate(x=11, y=12), Coordinate(x=11, y=13), Coordinate(x=12, y=13), Coordinate(x=13, y=1), Coordinate(x=13, y=2), Coordinate(x=13, y=3), Coordinate(x=13, y=4), Coordinate(x=13, y=5), Coordinate(x=13, y=6), Coordinate(x=13, y=7), Coordinate(x=13, y=8), Coordinate(x=13, y=9), Coordinate(x=13, y=10), Coordinate(x=13, y=11), Coordinate(x=13, y=12), Coordinate(x=13, y=13)]
+        >>> (lowest_score, positions_along_paths) = Maze.from_lines([
+        ...     '#################',
+        ...     '#...#...#...#..E#',
+        ...     '#.#.#.#.#.#.#.#.#',
+        ...     '#.#.#.#...#...#.#',
+        ...     '#.#.#.#.###.#.#.#',
+        ...     '#...#.#.#.....#.#',
+        ...     '#.#.#.#.#.#####.#',
+        ...     '#.#...#.#.#.....#',
+        ...     '#.#.#####.#.###.#',
+        ...     '#.#.#.......#...#',
+        ...     '#.#.###.#####.###',
+        ...     '#.#.#...#.....#.#',
+        ...     '#.#.#.#####.###.#',
+        ...     '#.#.#.........#.#',
+        ...     '#.#.#.#########.#',
+        ...     '#S#.............#',
+        ...     '#################',
+        ... ]).find_lowest_score_paths()
+        >>> lowest_score
+        11048
+        >>> sorted(positions_along_paths)
+        [Coordinate(x=1, y=5), Coordinate(x=1, y=6), Coordinate(x=1, y=7), Coordinate(x=1, y=8), Coordinate(x=1, y=9), Coordinate(x=1, y=10), Coordinate(x=1, y=11), Coordinate(x=1, y=12), Coordinate(x=1, y=13), Coordinate(x=1, y=14), Coordinate(x=1, y=15), Coordinate(x=2, y=5), Coordinate(x=3, y=5), Coordinate(x=3, y=6), Coordinate(x=3, y=7), Coordinate(x=3, y=8), Coordinate(x=3, y=9), Coordinate(x=3, y=10), Coordinate(x=3, y=11), Coordinate(x=3, y=12), Coordinate(x=3, y=13), Coordinate(x=3, y=14), Coordinate(x=3, y=15), Coordinate(x=4, y=15), Coordinate(x=5, y=11), Coordinate(x=5, y=12), Coordinate(x=5, y=13), Coordinate(x=5, y=14), Coordinate(x=5, y=15), Coordinate(x=6, y=11), Coordinate(x=6, y=13), Coordinate(x=7, y=9), Coordinate(x=7, y=10), Coordinate(x=7, y=11), Coordinate(x=7, y=13), Coordinate(x=8, y=9), Coordinate(x=8, y=13), Coordinate(x=9, y=9), Coordinate(x=9, y=13), Coordinate(x=10, y=9), Coordinate(x=10, y=13), Coordinate(x=11, y=7), Coordinate(x=11, y=8), Coordinate(x=11, y=9), Coordinate(x=11, y=11), Coordinate(x=11, y=12), Coordinate(x=11, y=13), Coordinate(x=12, y=7), Coordinate(x=12, y=11), Coordinate(x=13, y=7), Coordinate(x=13, y=9), Coordinate(x=13, y=10), Coordinate(x=13, y=11), Coordinate(x=14, y=7), Coordinate(x=14, y=9), Coordinate(x=15, y=1), Coordinate(x=15, y=2), Coordinate(x=15, y=3), Coordinate(x=15, y=4), Coordinate(x=15, y=5), Coordinate(x=15, y=6), Coordinate(x=15, y=7), Coordinate(x=15, y=8), Coordinate(x=15, y=9)]
+
+        >>> (lowest_score, positions_along_paths) = Maze.from_lines([
+        ...     '#######',
+        ...     '#.....#',
+        ...     '#S#.#E#',
+        ...     '#.....#',
+        ...     '#######',
+        ... ]).find_lowest_score_paths()
+        >>> lowest_score
+        3006
+        >>> sorted(positions_along_paths)
+        [Coordinate(x=1, y=1), Coordinate(x=1, y=2), Coordinate(x=1, y=3), Coordinate(x=2, y=1), Coordinate(x=2, y=3), Coordinate(x=3, y=1), Coordinate(x=3, y=3), Coordinate(x=4, y=1), Coordinate(x=4, y=3), Coordinate(x=5, y=1), Coordinate(x=5, y=2), Coordinate(x=5, y=3)]
+        """
         start_node = (self.start_position, self.start_orientation)
         start_h_score = manhattan_distance(self.start_position, self.end_position)
 
-        prev_node: dict[tuple[Coordinate, Orientation], tuple[Coordinate, Orientation]] = {}
+        prev_nodes: dict[tuple[Coordinate, Orientation], set[tuple[Coordinate, Orientation]]] = {}
         g_scores: dict[tuple[Coordinate, Orientation], int] = {start_node: 0}
         f_scores: dict[tuple[Coordinate, Orientation], int] = {start_node: start_h_score}
         queue: deque[tuple[int, Coordinate, Orientation]] = deque([(start_h_score, *start_node)])
-        end_node: Optional[tuple[Coordinate, Orientation]] = None
+        lowest_score: Optional[int] = None
+        end_nodes: set[tuple[Coordinate, Orientation]] = set()
         while queue:
             # 에이스타, 에이스타
             # 에이스타, 에이스타
@@ -128,16 +187,18 @@ class Maze(NamedTuple):
             (_, position, orientation) = queue.popleft()
             node = (position, orientation)
 
-            if position == self.end_position:
-                end_node = node
-                break
+            if (position == self.end_position) and ((lowest_score is None) or (g_scores[node] == lowest_score)):
+                end_nodes.add(node)
+                lowest_score = g_scores[node]
 
             g_score = g_scores[node]
             for (next_position, next_orientation, edge_score) in self.neighbours(position, orientation):
                 next_node = (next_position, next_orientation)
                 next_g_score = g_score + edge_score
+                if (lowest_score is not None) and (next_g_score > lowest_score):
+                    continue
                 if (next_node not in g_scores) or (next_g_score < g_scores[next_node]):
-                    prev_node[next_node] = node
+                    prev_nodes[next_node] = {node}
                     g_scores[next_node] = next_g_score
                     if next_node in f_scores:
                         expected_queue_item = (f_scores[next_node], *next_node)
@@ -147,15 +208,21 @@ class Maze(NamedTuple):
                     next_f_score = next_g_score + manhattan_distance(next_position, self.end_position)
                     f_scores[next_node] = next_f_score
                     insort_right(queue, (next_f_score, *next_node))
-        assert end_node is not None
+                elif next_g_score == g_scores[next_node]:
+                    prev_nodes[next_node].add(node)
+        assert lowest_score is not None
+        assert len(end_nodes) > 0
 
-        path: deque[Orientation] = deque([])
-        node = end_node
-        while node[0] != self.start_position:
-            path.appendleft(node[1])
-            node = prev_node[node]
+        # Reconstruct paths with lowest score.
+        positions_along_paths: set[Coordinate] = set()
+        nodes_to_follow: deque[tuple[Coordinate, Orientation]] = deque(end_nodes)
+        while nodes_to_follow:
+            node = nodes_to_follow.popleft()
+            positions_along_paths.add(node[0])
+            if node in prev_nodes:
+                nodes_to_follow.extend(prev_nodes[node])
 
-        return (tuple(path), g_scores[end_node])
+        return (lowest_score, positions_along_paths)
 
 
 def manhattan_distance(start_position: Coordinate, end_position: Coordinate) -> int:
@@ -208,8 +275,58 @@ def calculate_lowest_score_path(lines: Iterable[str]) -> int:
     11048
     """
     maze = Maze.from_lines(lines)
-    (_, score) = maze.find_lowest_score_path()
-    return score
+    (lowest_score, _) = maze.find_lowest_score_paths()
+    return lowest_score
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_positions_along_lowest_score_paths(lines: Iterable[str]) -> int:
+    """
+    >>> count_positions_along_lowest_score_paths([
+    ...     '###############',
+    ...     '#.......#....E#',
+    ...     '#.#.###.#.###.#',
+    ...     '#.....#.#...#.#',
+    ...     '#.###.#####.#.#',
+    ...     '#.#.#.......#.#',
+    ...     '#.#.#####.###.#',
+    ...     '#...........#.#',
+    ...     '###.#.#####.#.#',
+    ...     '#...#.....#.#.#',
+    ...     '#.#.#.###.#.#.#',
+    ...     '#.....#...#.#.#',
+    ...     '#.###.#.#.#.#.#',
+    ...     '#S..#.....#...#',
+    ...     '###############',
+    ... ])
+    45
+    >>> count_positions_along_lowest_score_paths([
+    ...     '#################',
+    ...     '#...#...#...#..E#',
+    ...     '#.#.#.#.#.#.#.#.#',
+    ...     '#.#.#.#...#...#.#',
+    ...     '#.#.#.#.###.#.#.#',
+    ...     '#...#.#.#.....#.#',
+    ...     '#.#.#.#.#.#####.#',
+    ...     '#.#...#.#.#.....#',
+    ...     '#.#.#####.#.###.#',
+    ...     '#.#.#.......#...#',
+    ...     '#.#.###.#####.###',
+    ...     '#.#.#...#.....#.#',
+    ...     '#.#.#.#####.###.#',
+    ...     '#.#.#.........#.#',
+    ...     '#.#.#.#########.#',
+    ...     '#S#.............#',
+    ...     '#################',
+    ... ])
+    64
+    """
+    maze = Maze.from_lines(lines)
+    (_, positions_along_paths) = maze.find_lowest_score_paths()
+    return len(positions_along_paths)
 
 
 ########################################################################################################################
@@ -227,6 +344,8 @@ def main() -> None:
 
     if args.part == 1:
         print(calculate_lowest_score_path(lines))
+    elif args.part == 2:
+        print(count_positions_along_lowest_score_paths(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
