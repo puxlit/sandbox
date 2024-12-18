@@ -25,7 +25,7 @@ class Coordinate(NamedTuple):
     y: int
 
     def __str__(self) -> str:
-        return f'({self.x}, {self.y})'
+        return f'{self.x},{self.y}'
 
 
 def init_memory_space(width: int, height: int) -> list[list[bool]]:
@@ -145,6 +145,56 @@ def count_shortest_path_length_after_1024_ns(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def find_entrapping_bytefall_position_from_some_ns(width: int, height: int, lines: Iterable[str], time: int) -> Optional[Coordinate]:
+    """
+    >>> find_entrapping_bytefall_position_from_some_ns(7, 7, [
+    ...     '5,4',
+    ...     '4,2',
+    ...     '4,5',
+    ...     '3,0',
+    ...     '2,1',
+    ...     '6,3',
+    ...     '2,4',
+    ...     '1,5',
+    ...     '0,6',
+    ...     '3,3',
+    ...     '2,6',
+    ...     '5,1',
+    ...     '1,2',
+    ...     '5,5',
+    ...     '2,5',
+    ...     '6,5',
+    ...     '1,4',
+    ...     '0,4',
+    ...     '6,4',
+    ...     '1,1',
+    ...     '6,1',
+    ...     '1,0',
+    ...     '0,5',
+    ...     '1,6',
+    ...     '2,0',
+    ... ], 12)
+    Coordinate(x=6, y=1)
+    """
+    memory_space = init_memory_space(width, height)
+    bytefall_iter = iter(parse_bytefall(lines))
+    corrupt(memory_space, islice(bytefall_iter, time))
+    for position in bytefall_iter:
+        corrupt(memory_space, (position,))
+        if count_shortest_path_length(memory_space) is None:
+            return position
+    return None
+
+
+def find_entrapping_bytefall_position(lines: Iterable[str]) -> str:
+    assert (position := find_entrapping_bytefall_position_from_some_ns(MEMORY_SPACE_WIDTH, MEMORY_SPACE_HEIGHT, lines, 1024)) is not None
+    return str(position)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -159,6 +209,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_shortest_path_length_after_1024_ns(lines))
+    elif args.part == 2:
+        print(find_entrapping_bytefall_position(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
