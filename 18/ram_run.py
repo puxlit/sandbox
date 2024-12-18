@@ -43,7 +43,7 @@ def corrupt(memory_space: list[list[bool]], bytefall: Iterable[Coordinate]) -> N
         memory_space[y][x] = True
 
 
-def count_shortest_path_length(memory_space: list[list[bool]]) -> Optional[int]:
+def find_shortest_path(memory_space: list[list[bool]]) -> Optional[tuple[Coordinate, ...]]:
     assert (max_y := len(memory_space) - 1) >= 0
     assert (max_x := len(memory_space[0]) - 1) >= 0
     end_position = Coordinate(max_x, max_y)
@@ -51,9 +51,11 @@ def count_shortest_path_length(memory_space: list[list[bool]]) -> Optional[int]:
     start_position = Coordinate(0, 0)
     start_h_score = manhattan_distance(start_position, end_position)
 
+    prev_position: dict[Coordinate, Coordinate] = {}
     g_scores: dict[Coordinate, int] = {start_position: 0}
     f_scores: dict[Coordinate, int] = {start_position: start_h_score}
     queue: deque[tuple[int, Coordinate]] = deque([(start_h_score, start_position)])
+    found_shortest_path = False
     while queue:
         # 에이스타, 에이스타
         # 에이스타, 에이스타
@@ -62,12 +64,14 @@ def count_shortest_path_length(memory_space: list[list[bool]]) -> Optional[int]:
         (_, position) = queue.popleft()
 
         if position == end_position:
-            return g_scores[position]
+            found_shortest_path = True
+            break
 
         g_score = g_scores[position]
         for next_position in uncorrupted_neighbours(memory_space, position):
             next_g_score = g_score + 1
             if (next_position not in g_scores) or (next_g_score < g_scores[next_position]):
+                prev_position[next_position] = position
                 g_scores[next_position] = next_g_score
                 if next_position in f_scores:
                     expected_queue_item = (f_scores[next_position], next_position)
@@ -77,7 +81,16 @@ def count_shortest_path_length(memory_space: list[list[bool]]) -> Optional[int]:
                 next_f_score = next_g_score + manhattan_distance(next_position, end_position)
                 f_scores[next_position] = next_f_score
                 insort_right(queue, (next_f_score, next_position))
-    return None
+    if not found_shortest_path:
+        return None
+
+    # Reconstruct shortest path.
+    shortest_path: deque[Coordinate] = deque([])
+    position = end_position
+    while position != start_position:
+        shortest_path.appendleft(position)
+        position = prev_position[position]
+    return tuple(shortest_path)
 
 
 def uncorrupted_neighbours(memory_space: list[list[bool]], position: Coordinate) -> Iterator[Coordinate]:
@@ -136,8 +149,8 @@ def count_shortest_path_length_after_some_ns(width: int, height: int, lines: Ite
     memory_space = init_memory_space(width, height)
     bytefall = parse_bytefall(lines)
     corrupt(memory_space, islice(bytefall, time))
-    assert (shortest_path_length := count_shortest_path_length(memory_space)) is not None
-    return shortest_path_length
+    assert (shortest_path := find_shortest_path(memory_space)) is not None
+    return len(shortest_path)
 
 
 def count_shortest_path_length_after_1024_ns(lines: Iterable[str]) -> int:
@@ -182,10 +195,15 @@ def find_entrapping_bytefall_position_from_some_ns(width: int, height: int, line
     memory_space = init_memory_space(width, height)
     bytefall_iter = iter(parse_bytefall(lines))
     corrupt(memory_space, islice(bytefall_iter, time))
+    assert (shortest_path := find_shortest_path(memory_space)) is not None
+    shortest_path_positions = set(shortest_path)
     for position in bytefall_iter:
         corrupt(memory_space, (position,))
-        if count_shortest_path_length(memory_space) is None:
+        if position not in shortest_path_positions:
+            continue
+        if (shortest_path := find_shortest_path(memory_space)) is None:
             return position
+        shortest_path_positions = set(shortest_path)
     return None
 
 
