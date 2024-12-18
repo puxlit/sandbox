@@ -136,7 +136,7 @@ def execute_until_halt_or_cycle(state: State, program: tuple[Instruction, ...]) 
 
 
 def explain(program: tuple[Instruction, ...]) -> Iterator[str]:
-    r"""
+    """
     >>> for line in explain(tuple(Instruction(opcode) for opcode in (0, 3, 5, 4, 3, 0))):
     ...     print(line)
     1. a >>= 3
