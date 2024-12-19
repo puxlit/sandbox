@@ -22,32 +22,8 @@ STRIPE_COLOURS = {
 }
 
 
-# Trie = dict[str, tuple[bool, 'Trie']]
-
-
 def valid_colours(towel_pattern_or_design: str) -> bool:
     return (len(towel_pattern_or_design) > 0) and all((stripe_colour in STRIPE_COLOURS) for stripe_colour in towel_pattern_or_design)
-
-
-# def parse_available_towel_patterns(line: str) -> Trie:
-#     """
-#     >>> parse_available_towel_patterns('uwu, u')
-#     {'u': (True, {'w': (False, {'u': (True, {})})})}
-#     """
-#     root: Trie = {}
-#     for available_towel_pattern in line.split(', '):
-#         assert valid_colours(available_towel_pattern)
-#         node = root
-#         last_iteration = len(available_towel_pattern) - 1
-#         for (i, stripe_colour) in enumerate(available_towel_pattern):
-#             is_terminal = (i == last_iteration)
-#             if stripe_colour not in node:
-#                 (_, node) = node.setdefault(stripe_colour, (is_terminal, {}))
-#             elif is_terminal:
-#                 node[stripe_colour] = (True, node[stripe_colour][1])
-#             else:
-#                 node = node[stripe_colour][1]
-#     return root
 
 
 def parse_available_towel_patterns(line: str) -> frozenset[str]:
@@ -64,14 +40,6 @@ def parse_desired_designs(lines: Iterable[str]) -> Iterator[str]:
         yield desired_design
 
 
-# def parse_input(lines: Iterable[str]) -> tuple[Trie, Iterator[str]]:
-#     lines_iter = iter(lines)
-#     available_towel_patterns = parse_available_towel_patterns(next(lines_iter))
-#     assert next(lines_iter) == ''
-#     desired_designs = parse_desired_designs(lines_iter)
-#     return (available_towel_patterns, desired_designs)
-
-
 def parse_input(lines: Iterable[str]) -> tuple[frozenset[str], Iterator[str]]:
     lines_iter = iter(lines)
     available_towel_patterns = parse_available_towel_patterns(next(lines_iter))
@@ -80,44 +48,9 @@ def parse_input(lines: Iterable[str]) -> tuple[frozenset[str], Iterator[str]]:
     return (available_towel_patterns, desired_designs)
 
 
-# def is_design_possible(desired_design: str, available_towel_patterns: Trie) -> bool:
-#     r"""
-#     >>> available_towel_patterns = parse_available_towel_patterns('r, wr, b, g, bwu, rb, gb, br')
-#     >>> tuple(filter(lambda desired_design: is_design_possible(desired_design, available_towel_patterns), [
-#     ...     'brwrr',
-#     ...     'bggr',
-#     ...     'gbbr',
-#     ...     'rrbgbr',
-#     ...     'ubwu',
-#     ...     'bwurrg',
-#     ...     'brgr',
-#     ...     'bbrgwb',
-#     ... ]))
-#     ('brwrr', 'bggr', 'gbbr', 'rrbgbr', 'bwurrg', 'brgr')
-
-#     >>> with open('input.txt', mode='rt') as input_file:
-#     ...     lines = [line.rstrip('\n') for line in input_file]
-#     >>> available_towel_patterns = parse_available_towel_patterns(lines[0])
-#     >>> is_design_possible(lines[9], available_towel_patterns)  # catastrophic backtracking
-#     """
-#     if len(desired_design) == 0:
-#         return True
-
-#     stack: list[int] = []
-#     node = available_towel_patterns
-#     for (i, stripe_colour) in enumerate(desired_design):
-#         if stripe_colour not in node:
-#             break
-#         (is_terminal, node) = node[stripe_colour]
-#         if is_terminal:
-#             stack.append(i + 1)
-
-#     while stack:
-#         prefix_length = stack.pop()
-#         if is_design_possible(desired_design[prefix_length:], available_towel_patterns):
-#             return True
-#     return False
-
+########################################################################################################################
+# Part 1
+########################################################################################################################
 
 @cache
 def is_design_possible(desired_design: str, available_towel_patterns: frozenset[str]) -> bool:
@@ -138,7 +71,7 @@ def is_design_possible(desired_design: str, available_towel_patterns: frozenset[
     >>> with open('input.txt', mode='rt') as input_file:
     ...     lines = [line.rstrip('\n') for line in input_file]
     >>> available_towel_patterns = parse_available_towel_patterns(lines[0])
-    >>> is_design_possible(lines[9], available_towel_patterns)  # catastrophic backtracking
+    >>> is_design_possible(lines[9], available_towel_patterns)  # catastrophic backtracking (without memoisation)
     False
     """
     if len(desired_design) == 0:
@@ -148,10 +81,6 @@ def is_design_possible(desired_design: str, available_towel_patterns: frozenset[
             return True
     return False
 
-
-########################################################################################################################
-# Part 1
-########################################################################################################################
 
 def count_possible_designs(lines: Iterable[str]) -> int:
     """
@@ -174,6 +103,55 @@ def count_possible_designs(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+@cache
+def count_design_arrangements(desired_design: str, available_towel_patterns: frozenset[str]) -> int:
+    """
+    >>> available_towel_patterns = parse_available_towel_patterns('r, wr, b, g, bwu, rb, gb, br')
+    >>> tuple(map(lambda desired_design: count_design_arrangements(desired_design, available_towel_patterns), [
+    ...     'brwrr',
+    ...     'bggr',
+    ...     'gbbr',
+    ...     'rrbgbr',
+    ...     'ubwu',
+    ...     'bwurrg',
+    ...     'brgr',
+    ...     'bbrgwb',
+    ... ]))
+    (2, 1, 4, 6, 0, 1, 2, 0)
+    """
+    if len(desired_design) == 0:
+        return 1
+    num_design_arrangements = 0
+    for available_towel_pattern in available_towel_patterns:
+        if desired_design.startswith(available_towel_pattern):
+            num_design_arrangements += count_design_arrangements(desired_design[len(available_towel_pattern):], available_towel_patterns)
+    return num_design_arrangements
+
+
+def count_all_design_arrangements(lines: Iterable[str]) -> int:
+    """
+    >>> count_all_design_arrangements([
+    ...     'r, wr, b, g, bwu, rb, gb, br',
+    ...     '',
+    ...     'brwrr',
+    ...     'bggr',
+    ...     'gbbr',
+    ...     'rrbgbr',
+    ...     'ubwu',
+    ...     'bwurrg',
+    ...     'brgr',
+    ...     'bbrgwb',
+    ... ])
+    16
+    """
+    (available_towel_patterns, desired_designs) = parse_input(lines)
+    return sum(count_design_arrangements(desired_design, available_towel_patterns) for desired_design in desired_designs)
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -188,6 +166,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_possible_designs(lines))
+    elif args.part == 2:
+        print(count_all_design_arrangements(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
