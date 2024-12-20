@@ -165,6 +165,8 @@ class Racetrack(NamedTuple):
         for (i, start_position) in enumerate(self.path):
             for (j, end_position) in enumerate(self.path[(i + 2):]):
                 cheat_duration = manhattan_distance(start_position, end_position)
+                if cheat_duration > 20:
+                    continue
                 savings_duration = (j + 2) - cheat_duration
                 if savings_duration < min_savings_duration:
                     continue
