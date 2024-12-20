@@ -128,13 +128,13 @@ class Racetrack(NamedTuple):
         ... ]).two_ps_cheats(1)).items())
         [(2, 14), (4, 14), (6, 2), (8, 4), (10, 2), (12, 3), (20, 1), (36, 1), (38, 1), (40, 1), (64, 1)]
         """
-        positions_ahead = set(self.path)
+        positions_ahead = {position: i for (i, position) in enumerate(self.path)}
         for (i, start_position) in enumerate(self.path):
-            positions_ahead.remove(start_position)
+            del positions_ahead[start_position]
             for end_position in partitioned_neighbours(self.rows, start_position):
                 if end_position not in positions_ahead:
                     continue
-                j = self.path.index(end_position, i)
+                j = positions_ahead[end_position]
                 savings_duration = j - i - 2
                 if savings_duration < min_savings_duration:
                     continue
@@ -162,12 +162,15 @@ class Racetrack(NamedTuple):
         ... ]).twenty_ps_cheats(50)).items())
         [(50, 32), (52, 31), (54, 29), (56, 39), (58, 25), (60, 23), (62, 20), (64, 19), (66, 12), (68, 14), (70, 12), (72, 22), (74, 4), (76, 3)]
         """
+        positions_ahead = {position: i for (i, position) in enumerate(self.path)}
         for (i, start_position) in enumerate(self.path):
-            for (j, end_position) in enumerate(self.path[(i + 2):]):
+            del positions_ahead[start_position]
+            # O(n²) ain't the prettiest, but it gets the job done.
+            for (end_position, j) in positions_ahead.items():
                 cheat_duration = manhattan_distance(start_position, end_position)
                 if cheat_duration > 20:
                     continue
-                savings_duration = (j + 2) - cheat_duration
+                savings_duration = j - i - cheat_duration
                 if savings_duration < min_savings_duration:
                     continue
                 yield (start_position, end_position, savings_duration)
