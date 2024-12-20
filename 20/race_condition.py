@@ -14,6 +14,9 @@ from typing import NamedTuple, Optional
 # CPU
 ########################################################################################################################
 
+MAX_TILES_WITHIN_20_STEPS = 841  # 21² + 20²
+
+
 class Coordinate(NamedTuple):
     x: int
     y: int
@@ -162,18 +165,29 @@ class Racetrack(NamedTuple):
         ... ]).twenty_ps_cheats(50)).items())
         [(50, 32), (52, 31), (54, 29), (56, 39), (58, 25), (60, 23), (62, 20), (64, 19), (66, 12), (68, 14), (70, 12), (72, 22), (74, 4), (76, 3)]
         """
+        assert (height := len(self.rows)) >= 1
+        assert (width := len(self.rows[0])) >= 1
         positions_ahead = {position: i for (i, position) in enumerate(self.path)}
         for (i, start_position) in enumerate(self.path):
             del positions_ahead[start_position]
-            # O(n²) ain't the prettiest, but it gets the job done.
-            for (end_position, j) in positions_ahead.items():
-                cheat_duration = manhattan_distance(start_position, end_position)
-                if cheat_duration > 20:
-                    continue
-                savings_duration = j - i - cheat_duration
-                if savings_duration < min_savings_duration:
-                    continue
-                yield (start_position, end_position, savings_duration)
+            if len(positions_ahead) > MAX_TILES_WITHIN_20_STEPS:
+                for end_position in clipped_positions_within_distance(start_position, 20, width, height):
+                    if end_position not in positions_ahead:
+                        continue
+                    cheat_duration = manhattan_distance(start_position, end_position)
+                    savings_duration = positions_ahead[end_position] - i - cheat_duration
+                    if savings_duration < min_savings_duration:
+                        continue
+                    yield (start_position, end_position, savings_duration)
+            else:
+                for (end_position, j) in positions_ahead.items():
+                    cheat_duration = manhattan_distance(start_position, end_position)
+                    if cheat_duration > 20:
+                        continue
+                    savings_duration = j - i - cheat_duration
+                    if savings_duration < min_savings_duration:
+                        continue
+                    yield (start_position, end_position, savings_duration)
 
 
 def neighbours(rows: tuple[tuple[Tile, ...], ...], position: Coordinate) -> Iterator[Coordinate]:
@@ -206,6 +220,14 @@ def partitioned_neighbours(rows: tuple[tuple[Tile, ...], ...], position: Coordin
 
 def manhattan_distance(start_position: Coordinate, end_position: Coordinate) -> int:
     return abs(end_position.x - start_position.x) + abs(end_position.y - start_position.y)
+
+
+def clipped_positions_within_distance(position: Coordinate, distance: int, width: int, height: int) -> Iterator[Coordinate]:
+    (x, y) = position
+    for new_y in range(max(y - distance, 0), min(y + distance + 1, height)):
+        remaining_distance = distance - abs(new_y - y)
+        for new_x in range(max(x - remaining_distance, 0), min(x + remaining_distance + 1, width)):
+            yield Coordinate(new_x, new_y)
 
 
 ########################################################################################################################
