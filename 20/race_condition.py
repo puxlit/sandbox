@@ -106,7 +106,7 @@ class Racetrack(NamedTuple):
         assert len(self.path) > 0
         return len(self.path) - 1
 
-    def cheats(self) -> Iterator[tuple[Coordinate, Coordinate, int]]:
+    def two_ps_cheats(self, min_savings_duration: int) -> Iterator[tuple[Coordinate, Coordinate, int]]:
         """
         >>> from collections import Counter
         >>> sorted(Counter(savings_duration for (_, _, savings_duration) in Racetrack.from_lines([
@@ -125,7 +125,7 @@ class Racetrack(NamedTuple):
         ...     '#.#.#.#.#.#.###',
         ...     '#...#...#...###',
         ...     '###############',
-        ... ]).cheats()).items())
+        ... ]).two_ps_cheats(1)).items())
         [(2, 14), (4, 14), (6, 2), (8, 4), (10, 2), (12, 3), (20, 1), (36, 1), (38, 1), (40, 1), (64, 1)]
         """
         positions_ahead = set(self.path)
@@ -136,7 +136,37 @@ class Racetrack(NamedTuple):
                     continue
                 j = self.path.index(end_position, i)
                 savings_duration = j - i - 2
-                if savings_duration <= 0:
+                if savings_duration < min_savings_duration:
+                    continue
+                yield (start_position, end_position, savings_duration)
+
+    def twenty_ps_cheats(self, min_savings_duration: int) -> Iterator[tuple[Coordinate, Coordinate, int]]:
+        """
+        >>> from collections import Counter
+        >>> sorted(Counter(savings_duration for (_, _, savings_duration) in Racetrack.from_lines([
+        ...     '###############',
+        ...     '#...#...#.....#',
+        ...     '#.#.#.#.#.###.#',
+        ...     '#S#...#.#.#...#',
+        ...     '#######.#.#.###',
+        ...     '#######.#.#...#',
+        ...     '#######.#.###.#',
+        ...     '###..E#...#...#',
+        ...     '###.#######.###',
+        ...     '#...###...#...#',
+        ...     '#.#####.#.###.#',
+        ...     '#.#...#.#.#...#',
+        ...     '#.#.#.#.#.#.###',
+        ...     '#...#...#...###',
+        ...     '###############',
+        ... ]).twenty_ps_cheats(50)).items())
+        [(50, 32), (52, 31), (54, 29), (56, 39), (58, 25), (60, 23), (62, 20), (64, 19), (66, 12), (68, 14), (70, 12), (72, 22), (74, 4), (76, 3)]
+        """
+        for (i, start_position) in enumerate(self.path):
+            for (j, end_position) in enumerate(self.path[(i + 2):]):
+                cheat_duration = manhattan_distance(start_position, end_position)
+                savings_duration = (j + 2) - cheat_duration
+                if savings_duration < min_savings_duration:
                     continue
                 yield (start_position, end_position, savings_duration)
 
@@ -169,13 +199,26 @@ def partitioned_neighbours(rows: tuple[tuple[Tile, ...], ...], position: Coordin
         yield Coordinate(new_x, y)
 
 
+def manhattan_distance(start_position: Coordinate, end_position: Coordinate) -> int:
+    return abs(end_position.x - start_position.x) + abs(end_position.y - start_position.y)
+
+
 ########################################################################################################################
 # Part 1
 ########################################################################################################################
 
-def count_cheats_saving_at_least_100_ps(lines: Iterable[str]) -> int:
+def count_two_ps_cheats_saving_at_least_100_ps(lines: Iterable[str]) -> int:
     racetrack = Racetrack.from_lines(lines)
-    return sum((savings_duration >= 100) for (_, _, savings_duration) in racetrack.cheats())
+    return sum(1 for _ in racetrack.two_ps_cheats(100))
+
+
+########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_twenty_ps_cheats_saving_at_least_100_ps(lines: Iterable[str]) -> int:
+    racetrack = Racetrack.from_lines(lines)
+    return sum(1 for _ in racetrack.twenty_ps_cheats(100))
 
 
 ########################################################################################################################
@@ -192,7 +235,9 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(count_cheats_saving_at_least_100_ps(lines))
+        print(count_two_ps_cheats_saving_at_least_100_ps(lines))
+    elif args.part == 2:
+        print(count_twenty_ps_cheats_saving_at_least_100_ps(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
