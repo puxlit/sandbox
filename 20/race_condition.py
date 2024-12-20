@@ -9,13 +9,12 @@ from collections.abc import Iterable, Iterator
 from enum import Enum
 from typing import NamedTuple, Optional
 
+from typing_extensions import assert_never
+
 
 ########################################################################################################################
 # CPU
 ########################################################################################################################
-
-MAX_TILES_WITHIN_20_STEPS = 841  # 21² + 20²
-
 
 class Coordinate(NamedTuple):
     x: int
@@ -23,6 +22,13 @@ class Coordinate(NamedTuple):
 
     def __str__(self) -> 'str':
         return f'({self.x}, {self.y})'
+
+
+class Direction(Enum):
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
 
 
 class Tile(Enum):
@@ -168,26 +174,47 @@ class Racetrack(NamedTuple):
         assert (height := len(self.rows)) >= 1
         assert (width := len(self.rows[0])) >= 1
         positions_ahead = {position: i for (i, position) in enumerate(self.path)}
+        positions_ahead_within_range = {
+            position
+            for position in clipped_positions_within_distance(self.path[0], 20, width, height)
+            if position in positions_ahead
+        }
+        prev_start_position: Optional[Coordinate] = None
         for (i, start_position) in enumerate(self.path):
             del positions_ahead[start_position]
-            if len(positions_ahead) > MAX_TILES_WITHIN_20_STEPS:
-                for end_position in clipped_positions_within_distance(start_position, 20, width, height):
-                    if end_position not in positions_ahead:
-                        continue
-                    cheat_duration = manhattan_distance(start_position, end_position)
-                    savings_duration = positions_ahead[end_position] - i - cheat_duration
-                    if savings_duration < min_savings_duration:
-                        continue
-                    yield (start_position, end_position, savings_duration)
-            else:
-                for (end_position, j) in positions_ahead.items():
-                    cheat_duration = manhattan_distance(start_position, end_position)
-                    if cheat_duration > 20:
-                        continue
-                    savings_duration = j - i - cheat_duration
-                    if savings_duration < min_savings_duration:
-                        continue
-                    yield (start_position, end_position, savings_duration)
+            positions_ahead_within_range.remove(start_position)
+            if prev_start_position is not None:
+                if (prev_start_position.y > start_position.y):
+                    # We moved up. Remove positions along the old SW/SE edge. Add positions along the new NW/NE edge.
+                    trailing_edges = Direction.DOWN
+                    leading_edges = Direction.UP
+                elif (prev_start_position.y < start_position.y):
+                    # We moved down. Remove positions along the old NW/NE edge. Add positions along the new SW/SE edge.
+                    trailing_edges = Direction.UP
+                    leading_edges = Direction.DOWN
+                elif (prev_start_position.x > start_position.x):
+                    # We moved left. Remove positions along the old NE/SE edge. Add positions along the new NW/SW edge.
+                    trailing_edges = Direction.RIGHT
+                    leading_edges = Direction.LEFT
+                elif (prev_start_position.x < start_position.x):
+                    # We moved right. Remove positions along the old NW/SW edge. Add positions along the new NE/SE edge.
+                    trailing_edges = Direction.LEFT
+                    leading_edges = Direction.RIGHT
+                else:
+                    assert False
+                for position in clipped_edge_positions_at_distance(prev_start_position, trailing_edges, 20, width, height):
+                    if position in positions_ahead_within_range:
+                        positions_ahead_within_range.remove(position)
+                for position in clipped_edge_positions_at_distance(start_position, leading_edges, 20, width, height):
+                    if position in positions_ahead:
+                        positions_ahead_within_range.add(position)
+            for end_position in positions_ahead_within_range:
+                cheat_duration = manhattan_distance(start_position, end_position)
+                savings_duration = positions_ahead[end_position] - i - cheat_duration
+                if savings_duration < min_savings_duration:
+                    continue
+                yield (start_position, end_position, savings_duration)
+            prev_start_position = start_position
 
 
 def neighbours(rows: tuple[tuple[Tile, ...], ...], position: Coordinate) -> Iterator[Coordinate]:
@@ -228,6 +255,39 @@ def clipped_positions_within_distance(position: Coordinate, distance: int, width
         remaining_distance = distance - abs(new_y - y)
         for new_x in range(max(x - remaining_distance, 0), min(x + remaining_distance + 1, width)):
             yield Coordinate(new_x, new_y)
+
+
+def clipped_edge_positions_at_distance(position: Coordinate, edges: Direction, distance: int, width: int, height: int) -> Iterator[Coordinate]:
+    (x, y) = position
+    if edges == Direction.UP:
+        # Yield positions along the NW/NE edges.
+        for new_x in range(max(x - distance, 0), min(x + distance + 1, width)):
+            remaining_distance = distance - abs(new_x - x)
+            if (new_y := y - remaining_distance) >= 0:
+                yield Coordinate(new_x, new_y)
+        return
+    if edges == Direction.DOWN:
+        # Yield positions along the SW/SE edges.
+        for new_x in range(max(x - distance, 0), min(x + distance + 1, width)):
+            remaining_distance = distance - abs(new_x - x)
+            if (new_y := y + remaining_distance) < height:
+                yield Coordinate(new_x, new_y)
+        return
+    if edges == Direction.LEFT:
+        # Yield positions along the NW/SW edges.
+        for new_y in range(max(y - distance, 0), min(y + distance + 1, height)):
+            remaining_distance = distance - abs(new_y - y)
+            if (new_x := x - remaining_distance) >= 0:
+                yield Coordinate(new_x, new_y)
+        return
+    if edges == Direction.RIGHT:
+        # Yield positions along the NE/SE edges.
+        for new_y in range(max(y - distance, 0), min(y + distance + 1, height)):
+            remaining_distance = distance - abs(new_y - y)
+            if (new_x := x + remaining_distance) >= 0:
+                yield Coordinate(new_x, new_y)
+        return
+    assert_never(edges)
 
 
 ########################################################################################################################
