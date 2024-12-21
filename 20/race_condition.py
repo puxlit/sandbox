@@ -175,45 +175,90 @@ class Racetrack(NamedTuple):
         assert (width := len(self.rows[0])) >= 1
         positions_ahead = {position: i for (i, position) in enumerate(self.path)}
         positions_ahead_within_range = {
-            position
+            position: manhattan_distance(self.path[0], position)
             for position in clipped_positions_within_distance(self.path[0], 20, width, height)
             if position in positions_ahead
         }
         prev_start_position: Optional[Coordinate] = None
         for (i, start_position) in enumerate(self.path):
             del positions_ahead[start_position]
-            positions_ahead_within_range.remove(start_position)
+            del positions_ahead_within_range[start_position]
             if prev_start_position is not None:
+                trailing_edge_positions: set[Coordinate] = set()
                 if (prev_start_position.y > start_position.y):
-                    # We moved up. Remove positions along the old SW/SE edge. Add positions along the new NW/NE edge.
-                    trailing_edges = Direction.DOWN
+                    # We moved up. Update Manhattan distances, then add positions along the new NW/NE edge. (Yes, the
+                    # only difference in the loop for the four directions is the predicate testing whether the end
+                    # position has moved further away. However, we shave off a couple hundred millis by _not_ extracting
+                    # this predicate into its own function (+ repeated calls).)
+                    for (end_position, prev_cheat_duration) in positions_ahead_within_range.items():
+                        cheat_duration = prev_cheat_duration + (1 if (end_position.y >= prev_start_position.y) else -1)
+                        if cheat_duration > 20:
+                            trailing_edge_positions.add(end_position)
+                            continue
+                        positions_ahead_within_range[end_position] = cheat_duration
+                        savings_duration = positions_ahead[end_position] - i - cheat_duration
+                        if savings_duration < min_savings_duration:
+                            continue
+                        yield (start_position, end_position, savings_duration)
                     leading_edges = Direction.UP
                 elif (prev_start_position.y < start_position.y):
-                    # We moved down. Remove positions along the old NW/NE edge. Add positions along the new SW/SE edge.
-                    trailing_edges = Direction.UP
+                    # We moved down. Update Manhattan distances, then add positions along the new SW/SE edge.
+                    for (end_position, prev_cheat_duration) in positions_ahead_within_range.items():
+                        cheat_duration = prev_cheat_duration + (1 if (end_position.y <= prev_start_position.y) else -1)
+                        if cheat_duration > 20:
+                            trailing_edge_positions.add(end_position)
+                            continue
+                        positions_ahead_within_range[end_position] = cheat_duration
+                        savings_duration = positions_ahead[end_position] - i - cheat_duration
+                        if savings_duration < min_savings_duration:
+                            continue
+                        yield (start_position, end_position, savings_duration)
                     leading_edges = Direction.DOWN
                 elif (prev_start_position.x > start_position.x):
-                    # We moved left. Remove positions along the old NE/SE edge. Add positions along the new NW/SW edge.
-                    trailing_edges = Direction.RIGHT
+                    # We moved left. Update Manhattan distances, then add positions along the new NW/SW edge.
+                    for (end_position, prev_cheat_duration) in positions_ahead_within_range.items():
+                        cheat_duration = prev_cheat_duration + (1 if (end_position.x >= prev_start_position.x) else -1)
+                        if cheat_duration > 20:
+                            trailing_edge_positions.add(end_position)
+                            continue
+                        positions_ahead_within_range[end_position] = cheat_duration
+                        savings_duration = positions_ahead[end_position] - i - cheat_duration
+                        if savings_duration < min_savings_duration:
+                            continue
+                        yield (start_position, end_position, savings_duration)
                     leading_edges = Direction.LEFT
                 elif (prev_start_position.x < start_position.x):
-                    # We moved right. Remove positions along the old NW/SW edge. Add positions along the new NE/SE edge.
-                    trailing_edges = Direction.LEFT
+                    # We moved right. Update Manhattan distances, then add positions along the new NE/SE edge.
+                    for (end_position, prev_cheat_duration) in positions_ahead_within_range.items():
+                        cheat_duration = prev_cheat_duration + (1 if (end_position.x <= prev_start_position.x) else -1)
+                        if cheat_duration > 20:
+                            trailing_edge_positions.add(end_position)
+                            continue
+                        positions_ahead_within_range[end_position] = cheat_duration
+                        savings_duration = positions_ahead[end_position] - i - cheat_duration
+                        if savings_duration < min_savings_duration:
+                            continue
+                        yield (start_position, end_position, savings_duration)
                     leading_edges = Direction.RIGHT
                 else:
                     assert False
-                for position in clipped_edge_positions_at_distance(prev_start_position, trailing_edges, 20, width, height):
-                    if position in positions_ahead_within_range:
-                        positions_ahead_within_range.remove(position)
-                for position in clipped_edge_positions_at_distance(start_position, leading_edges, 20, width, height):
-                    if position in positions_ahead:
-                        positions_ahead_within_range.add(position)
-            for end_position in positions_ahead_within_range:
-                cheat_duration = manhattan_distance(start_position, end_position)
-                savings_duration = positions_ahead[end_position] - i - cheat_duration
-                if savings_duration < min_savings_duration:
-                    continue
-                yield (start_position, end_position, savings_duration)
+                for end_position in trailing_edge_positions:
+                    del positions_ahead_within_range[end_position]
+                for end_position in clipped_edge_positions_at_distance(start_position, leading_edges, 20, width, height):
+                    if end_position in positions_ahead:
+                        positions_ahead_within_range[end_position] = 20
+                        savings_duration = positions_ahead[end_position] - i - 20
+                        if savings_duration < min_savings_duration:
+                            continue
+                        yield (start_position, end_position, savings_duration)
+            else:
+                # First iteration.
+                for end_position in positions_ahead_within_range:
+                    cheat_duration = positions_ahead_within_range[end_position]
+                    savings_duration = positions_ahead[end_position] - i - cheat_duration
+                    if savings_duration < min_savings_duration:
+                        continue
+                    yield (start_position, end_position, savings_duration)
             prev_start_position = start_position
 
 
