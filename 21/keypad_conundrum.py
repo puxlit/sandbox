@@ -6,7 +6,7 @@
 ########################################################################################################################
 
 from collections.abc import Iterable, Iterator
-from functools import cache
+from functools import cache, partial
 from itertools import permutations
 from typing import NamedTuple, Optional
 
@@ -16,7 +16,7 @@ from typing import NamedTuple, Optional
 ########################################################################################################################
 
 # (0, 0) is the empty gap, rows count upwards, columns count rightwards.
-NUMERIC_KEYPAD_BUTTON_COORDINATES = {
+NUMPAD_BUTTON_COORDINATES = {
     '7': (3, 0),
     '8': (3, 1),
     '9': (3, 2),
@@ -29,17 +29,17 @@ NUMERIC_KEYPAD_BUTTON_COORDINATES = {
     '0': (0, 1),
     'A': (0, 2),
 }
-NUMERIC_KEYPAD_COORDINATE_BUTTONS = {coordinate: button for (button, coordinate) in NUMERIC_KEYPAD_BUTTON_COORDINATES.items()}
+NUMPAD_COORDINATE_BUTTONS = {coordinate: button for (button, coordinate) in NUMPAD_BUTTON_COORDINATES.items()}
 
 # (0, 0) is the empty gap, rows count downwards, columns count rightwards.
-DIRECTIONAL_KEYPAD_BUTTON_COORDINATES = {
+DPAD_BUTTON_COORDINATES = {
     '^': (0, 1),
     'A': (0, 2),
     '<': (1, 0),
     'v': (1, 1),
     '>': (1, 2),
 }
-DIRECTIONAL_KEYPAD_COORDINATE_BUTTONS = {coordinate: button for (button, coordinate) in DIRECTIONAL_KEYPAD_BUTTON_COORDINATES.items()}
+DPAD_COORDINATE_BUTTONS = {coordinate: button for (button, coordinate) in DPAD_BUTTON_COORDINATES.items()}
 
 
 class Code(NamedTuple):
@@ -68,14 +68,14 @@ def parse_codes(lines: Iterable[str]) -> Iterator[Code]:
 
 
 @cache
-def numeric_to_directional_keypad_button_press(from_button_press: str, to_button_press: str, depth: int) -> str:
+def min_translated_button_presses_for_numpad_button_press(from_button_press: str, to_button_press: str, depth: int) -> int:
     assert depth >= 0
     if to_button_press == from_button_press:
         # At the end of each button press, actors higher up the stack should be poised over the activate button.
-        return 'A'
+        return 1
 
-    (from_button_row, from_button_column) = NUMERIC_KEYPAD_BUTTON_COORDINATES[from_button_press]
-    (to_button_row, to_button_column) = NUMERIC_KEYPAD_BUTTON_COORDINATES[to_button_press]
+    (from_button_row, from_button_column) = NUMPAD_BUTTON_COORDINATES[from_button_press]
+    (to_button_row, to_button_column) = NUMPAD_BUTTON_COORDINATES[to_button_press]
     horizontal_button_presses = ('>' if (to_button_column > from_button_column) else '<') * abs(to_button_column - from_button_column)
     vertical_button_presses = ('^' if (to_button_row > from_button_row) else 'v') * abs(to_button_row - from_button_row)
     routes = set(''.join(permutation) for permutation in permutations(horizontal_button_presses + vertical_button_presses))
@@ -85,65 +85,65 @@ def numeric_to_directional_keypad_button_press(from_button_press: str, to_button
     elif (from_button_column == to_button_row == 0):
         routes.remove(vertical_button_presses + horizontal_button_presses)
 
-    best_translated_button_presses: Optional[str] = None
+    best_num_translated_button_presses: Optional[int] = None
     for route in sorted(routes):
         button_presses = route + 'A'
-        translated_button_presses = button_presses if (depth == 0) else directional_to_directional_keypad_button_presses(button_presses, depth - 1)
-        if (best_translated_button_presses is None) or len(translated_button_presses) < len(best_translated_button_presses):
-            best_translated_button_presses = translated_button_presses
-    assert best_translated_button_presses is not None
-    return best_translated_button_presses
+        num_translated_button_presses = len(button_presses) if (depth == 0) else min_translated_button_presses_for_dpad_button_presses(button_presses, depth - 1)
+        if (best_num_translated_button_presses is None) or num_translated_button_presses < best_num_translated_button_presses:
+            best_num_translated_button_presses = num_translated_button_presses
+    assert best_num_translated_button_presses is not None
+    return best_num_translated_button_presses
 
 
-def numeric_to_directional_keypad_button_presses(button_presses: str, depth: int) -> str:
+def min_translated_button_presses_for_numpad_button_presses(button_presses: str, depth: int) -> int:
     """
-    >>> len(numeric_to_directional_keypad_button_presses('029A', 0))
+    >>> min_translated_button_presses_for_numpad_button_presses('029A', 0)
     12
-    >>> len(numeric_to_directional_keypad_button_presses('029A', 1))
+    >>> min_translated_button_presses_for_numpad_button_presses('029A', 1)
     28
-    >>> len(numeric_to_directional_keypad_button_presses('029A', 2))
+    >>> min_translated_button_presses_for_numpad_button_presses('029A', 2)
     68
-    >>> len(numeric_to_directional_keypad_button_presses('980A', 0))
+    >>> min_translated_button_presses_for_numpad_button_presses('980A', 0)
     12
-    >>> len(numeric_to_directional_keypad_button_presses('980A', 1))
+    >>> min_translated_button_presses_for_numpad_button_presses('980A', 1)
     26
-    >>> len(numeric_to_directional_keypad_button_presses('980A', 2))
+    >>> min_translated_button_presses_for_numpad_button_presses('980A', 2)
     60
-    >>> len(numeric_to_directional_keypad_button_presses('179A', 0))
+    >>> min_translated_button_presses_for_numpad_button_presses('179A', 0)
     14
-    >>> len(numeric_to_directional_keypad_button_presses('179A', 1))
+    >>> min_translated_button_presses_for_numpad_button_presses('179A', 1)
     28
-    >>> len(numeric_to_directional_keypad_button_presses('179A', 2))
+    >>> min_translated_button_presses_for_numpad_button_presses('179A', 2)
     68
-    >>> len(numeric_to_directional_keypad_button_presses('456A', 0))
+    >>> min_translated_button_presses_for_numpad_button_presses('456A', 0)
     12
-    >>> len(numeric_to_directional_keypad_button_presses('456A', 1))
+    >>> min_translated_button_presses_for_numpad_button_presses('456A', 1)
     26
-    >>> len(numeric_to_directional_keypad_button_presses('456A', 2))
+    >>> min_translated_button_presses_for_numpad_button_presses('456A', 2)
     64
-    >>> len(numeric_to_directional_keypad_button_presses('379A', 0))
+    >>> min_translated_button_presses_for_numpad_button_presses('379A', 0)
     14
-    >>> len(numeric_to_directional_keypad_button_presses('379A', 1))
+    >>> min_translated_button_presses_for_numpad_button_presses('379A', 1)
     28
-    >>> len(numeric_to_directional_keypad_button_presses('379A', 2))
+    >>> min_translated_button_presses_for_numpad_button_presses('379A', 2)
     64
     """
     assert depth >= 0
-    translated_button_presses: list[str] = []
+    num_translated_button_presses = 0
     prev_button_press = 'A'
     for button_press in button_presses:
-        translated_button_presses.append(numeric_to_directional_keypad_button_press(prev_button_press, button_press, depth))
+        num_translated_button_presses += min_translated_button_presses_for_numpad_button_press(prev_button_press, button_press, depth)
         prev_button_press = button_press
-    return ''.join(translated_button_presses)
+    return num_translated_button_presses
 
 
-def execute_directional_to_numeric_keypad_button_presses(button_presses: str) -> str:
+def execute_dpad_to_numpad_button_presses(button_presses: str) -> str:
     """
-    >>> execute_directional_to_numeric_keypad_button_presses('<A^A>^^AvvvA')
+    >>> execute_dpad_to_numpad_button_presses('<A^A>^^AvvvA')
     '029A'
     """
     executed_button_presses: list[str] = []
-    (row, column) = NUMERIC_KEYPAD_BUTTON_COORDINATES['A']
+    (row, column) = NUMPAD_BUTTON_COORDINATES['A']
     for button_press in button_presses:
         if button_press == 'v':
             row -= 1
@@ -154,7 +154,7 @@ def execute_directional_to_numeric_keypad_button_presses(button_presses: str) ->
         elif button_press == '>':
             column += 1
         elif button_press == 'A':
-            executed_button_presses.append(NUMERIC_KEYPAD_COORDINATE_BUTTONS[(row, column)])
+            executed_button_presses.append(NUMPAD_COORDINATE_BUTTONS[(row, column)])
         else:
             assert False
         assert (0 <= row <= 3) and (0 <= column <= 2) and ((row, column) != (0, 0))
@@ -162,14 +162,14 @@ def execute_directional_to_numeric_keypad_button_presses(button_presses: str) ->
 
 
 @cache
-def directional_to_directional_keypad_button_press(from_button_press: str, to_button_press: str, depth: int) -> str:
+def min_translated_button_presses_for_dpad_button_press(from_button_press: str, to_button_press: str, depth: int) -> int:
     assert depth >= 0
     if to_button_press == from_button_press:
         # At the end of each button press, actors higher up the stack should be poised over the activate button.
-        return 'A'
+        return 1
 
-    (from_button_row, from_button_column) = DIRECTIONAL_KEYPAD_BUTTON_COORDINATES[from_button_press]
-    (to_button_row, to_button_column) = DIRECTIONAL_KEYPAD_BUTTON_COORDINATES[to_button_press]
+    (from_button_row, from_button_column) = DPAD_BUTTON_COORDINATES[from_button_press]
+    (to_button_row, to_button_column) = DPAD_BUTTON_COORDINATES[to_button_press]
     horizontal_button_presses = ('>' if (to_button_column > from_button_column) else '<') * abs(to_button_column - from_button_column)
     vertical_button_presses = ('v' if (to_button_row > from_button_row) else '^') * abs(to_button_row - from_button_row)
     routes = set(''.join(permutation) for permutation in permutations(horizontal_button_presses + vertical_button_presses))
@@ -179,36 +179,36 @@ def directional_to_directional_keypad_button_press(from_button_press: str, to_bu
     elif (from_button_column == to_button_row == 0):
         routes.remove(vertical_button_presses + horizontal_button_presses)
 
-    best_translated_button_presses: Optional[str] = None
+    best_num_translated_button_presses: Optional[int] = None
     for route in sorted(routes):
         button_presses = route + 'A'
-        translated_button_presses = button_presses if (depth == 0) else directional_to_directional_keypad_button_presses(button_presses, depth - 1)
-        if (best_translated_button_presses is None) or len(translated_button_presses) < len(best_translated_button_presses):
-            best_translated_button_presses = translated_button_presses
-    assert best_translated_button_presses is not None
-    return best_translated_button_presses
+        num_translated_button_presses = len(button_presses) if (depth == 0) else min_translated_button_presses_for_dpad_button_presses(button_presses, depth - 1)
+        if (best_num_translated_button_presses is None) or num_translated_button_presses < best_num_translated_button_presses:
+            best_num_translated_button_presses = num_translated_button_presses
+    assert best_num_translated_button_presses is not None
+    return best_num_translated_button_presses
 
 
 @cache
-def directional_to_directional_keypad_button_presses(button_presses: str, depth: int) -> str:
+def min_translated_button_presses_for_dpad_button_presses(button_presses: str, depth: int) -> int:
     assert depth >= 0
-    translated_button_presses: list[str] = []
+    num_translated_button_presses = 0
     prev_button_press = 'A'
     for button_press in button_presses:
-        translated_button_presses.append(directional_to_directional_keypad_button_press(prev_button_press, button_press, depth))
+        num_translated_button_presses += min_translated_button_presses_for_dpad_button_press(prev_button_press, button_press, depth)
         prev_button_press = button_press
-    return ''.join(translated_button_presses)
+    return num_translated_button_presses
 
 
-def execute_directional_to_directional_keypad_button_presses(button_presses: str) -> str:
+def execute_dpad_to_dpad_button_presses(button_presses: str) -> str:
     """
-    >>> execute_directional_to_directional_keypad_button_presses('<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A')
+    >>> execute_dpad_to_dpad_button_presses('<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A')
     'v<<A>>^A<A>AvA<^AA>A<vAAA>^A'
-    >>> execute_directional_to_directional_keypad_button_presses('v<<A>>^A<A>AvA<^AA>A<vAAA>^A')
+    >>> execute_dpad_to_dpad_button_presses('v<<A>>^A<A>AvA<^AA>A<vAAA>^A')
     '<A^A>^^AvvvA'
     """
     executed_button_presses: list[str] = []
-    (row, column) = DIRECTIONAL_KEYPAD_BUTTON_COORDINATES['A']
+    (row, column) = DPAD_BUTTON_COORDINATES['A']
     for button_press in button_presses:
         if button_press == '^':
             row -= 1
@@ -219,37 +219,37 @@ def execute_directional_to_directional_keypad_button_presses(button_presses: str
         elif button_press == '>':
             column += 1
         elif button_press == 'A':
-            executed_button_presses.append(DIRECTIONAL_KEYPAD_COORDINATE_BUTTONS[(row, column)])
+            executed_button_presses.append(DPAD_COORDINATE_BUTTONS[(row, column)])
         else:
             assert False
         assert (0 <= row <= 1) and (0 <= column <= 2) and ((row, column) != (0, 0))
     return ''.join(executed_button_presses)
 
 
+def calculate_code_complexity(code: Code, num_robots: int) -> int:
+    """
+    >>> calculate_code_complexity(Code.from_line('029A'), 2)
+    1972
+    >>> calculate_code_complexity(Code.from_line('980A'), 2)
+    58800
+    >>> calculate_code_complexity(Code.from_line('179A'), 2)
+    12172
+    >>> calculate_code_complexity(Code.from_line('456A'), 2)
+    29184
+    >>> calculate_code_complexity(Code.from_line('379A'), 2)
+    24256
+    """
+    num_button_presses = min_translated_button_presses_for_numpad_button_presses(code.button_presses, num_robots)
+    return num_button_presses * code.number
+
+
 ########################################################################################################################
 # Part 1
 ########################################################################################################################
 
-def calculate_code_complexity(code: Code) -> int:
+def sum_code_complexities_with_two_robots(lines: Iterable[str]) -> int:
     """
-    >>> calculate_code_complexity(Code.from_line('029A'))
-    1972
-    >>> calculate_code_complexity(Code.from_line('980A'))
-    58800
-    >>> calculate_code_complexity(Code.from_line('179A'))
-    12172
-    >>> calculate_code_complexity(Code.from_line('456A'))
-    29184
-    >>> calculate_code_complexity(Code.from_line('379A'))
-    24256
-    """
-    button_presses = numeric_to_directional_keypad_button_presses(code.button_presses, 2)
-    return len(button_presses) * code.number
-
-
-def sum_code_complexities(lines: Iterable[str]) -> int:
-    """
-    >>> sum_code_complexities([
+    >>> sum_code_complexities_with_two_robots([
     ...     '029A',
     ...     '980A',
     ...     '179A',
@@ -259,7 +259,16 @@ def sum_code_complexities(lines: Iterable[str]) -> int:
     126384
     """
     codes = parse_codes(lines)
-    return sum(map(calculate_code_complexity, codes))
+    return sum(map(partial(calculate_code_complexity, num_robots=2), codes))
+
+
+########################################################################################################################
+# Part 2 (of a copy of a copy of a copy of a)
+########################################################################################################################
+
+def sum_code_complexities_with_twenty_five_robots(lines: Iterable[str]) -> int:
+    codes = parse_codes(lines)
+    return sum(map(partial(calculate_code_complexity, num_robots=25), codes))
 
 
 ########################################################################################################################
@@ -276,7 +285,9 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(sum_code_complexities(lines))
+        print(sum_code_complexities_with_two_robots(lines))
+    elif args.part == 2:
+        print(sum_code_complexities_with_twenty_five_robots(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
