@@ -5,7 +5,6 @@
 # Imports
 ########################################################################################################################
 
-from collections import Counter, deque
 from collections.abc import Iterable, Iterator
 from functools import partial
 from itertools import islice
@@ -15,6 +14,9 @@ from itertools import islice
 # Monkey business
 ########################################################################################################################
 
+TOTAL_DELTA_VALUES = 19                                  # Delta values range from -9 to 9 (inclusive).
+DELTA_VALUE_TO_INDEX_OFFSET = 9
+TOTAL_DELTA_SEQUENCE_COUNTERS = TOTAL_DELTA_VALUES ** 4  # 19⁴ = 130,321.
 MAX_NEW_SECRET_NUMBERS = 2000
 
 STEP_ONE_LEFT_SHIFT = 6                # This is effectively a multiplier of         64.
@@ -87,25 +89,41 @@ def calculate_max_banana_sales(lines: Iterable[str]) -> int:
     ... ])
     23
     """
-    # Each delta can have a value from -9 to 9, so the total number of possible delta sequences is 19⁴ = 130,321.
-    delta_sequence_sales: Counter[tuple[int, int, int, int]] = Counter()
+    max_delta_sequence_sales = 0
+    delta_sequence_sales = [0] * TOTAL_DELTA_SEQUENCE_COUNTERS
     initial_secret_numbers = parse_initial_secret_numbers(lines)
     for initial_secret_number in initial_secret_numbers:
+        witnessed_delta_sequence_ids: set[int] = set()
+        secret_numbers_iter = islice(secret_numbers(initial_secret_number), MAX_NEW_SECRET_NUMBERS)
+        # Prime first delta.
         prev_price = initial_secret_number % 10
-        mutable_delta_sequence: deque[int] = deque(maxlen=4)
-        witnessed_delta_sequences: set[tuple[int, int, int, int]] = set()
-        for secret_number in islice(secret_numbers(initial_secret_number), MAX_NEW_SECRET_NUMBERS):
+        price = next(secret_numbers_iter) % 10
+        delta_i = ((price - prev_price) + DELTA_VALUE_TO_INDEX_OFFSET) * (TOTAL_DELTA_VALUES ** 3)
+        prev_price = price
+        # Prime second delta.
+        price = next(secret_numbers_iter) % 10
+        delta_j = ((price - prev_price) + DELTA_VALUE_TO_INDEX_OFFSET) * (TOTAL_DELTA_VALUES ** 2)
+        prev_price = price
+        # Prime third delta.
+        price = next(secret_numbers_iter) % 10
+        delta_k = ((price - prev_price) + DELTA_VALUE_TO_INDEX_OFFSET) * TOTAL_DELTA_VALUES
+        prev_price = price
+        # We're all primed. Next delta gives us a full delta sequence.
+        for secret_number in secret_numbers_iter:
             price = secret_number % 10
-            delta = price - prev_price
-            mutable_delta_sequence.append(delta)
-            if len(mutable_delta_sequence) == 4:
-                # Mypy understandably isn't convinced that `tuple(mutable_delta_sequence)` has the type `tuple[int, int, int, int]`.
-                delta_sequence = (mutable_delta_sequence[0], mutable_delta_sequence[1], mutable_delta_sequence[2], mutable_delta_sequence[3])
-                if delta_sequence not in witnessed_delta_sequences:
-                    delta_sequence_sales[delta_sequence] += price
-                    witnessed_delta_sequences.add(delta_sequence)
+            delta_l = (price - prev_price) + DELTA_VALUE_TO_INDEX_OFFSET
+            delta_sequence_id = delta_i + delta_j + delta_k + delta_l
+            if delta_sequence_id not in witnessed_delta_sequence_ids:
+                witnessed_delta_sequence_ids.add(delta_sequence_id)
+                if price != 0:
+                    delta_sequence_sales[delta_sequence_id] += price
+                    if delta_sequence_sales[delta_sequence_id] > max_delta_sequence_sales:
+                        max_delta_sequence_sales = delta_sequence_sales[delta_sequence_id]
             prev_price = price
-    return max(delta_sequence_sales.values())
+            delta_i = delta_j * TOTAL_DELTA_VALUES
+            delta_j = delta_k * TOTAL_DELTA_VALUES
+            delta_k = delta_l * TOTAL_DELTA_VALUES
+    return max_delta_sequence_sales
 
 
 ########################################################################################################################
