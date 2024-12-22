@@ -19,20 +19,25 @@ DELTA_VALUE_TO_INDEX_OFFSET = 9
 TOTAL_DELTA_SEQUENCE_COUNTERS = TOTAL_DELTA_VALUES ** 4  # 19⁴ = 130,321.
 MAX_NEW_SECRET_NUMBERS = 2000
 
-STEP_ONE_LEFT_SHIFT = 6                # This is effectively a multiplier of         64.
-STEP_TWO_RIGHT_SHIFT = 5               # This is effectively a divisor    of         32.
-STEP_THREE_LEFT_SHIFT = 11             # This is effectively a multiplier of      2,048.
-SECRET_NUMBER_BITMASK = (1 << 24) - 1  # This is effectively a modulus    of 16,777,216.
+STEP_ONE_BITMASK = (1 << 18) - 1    # This bitmask ensures that the result (post-left shift) remains 24-bit.
+STEP_ONE_LEFT_SHIFT = 6             # This is effectively a multiplier of         64.
+STEP_TWO_RIGHT_SHIFT = 5            # This is effectively a divisor    of         32.
+STEP_THREE_BITMASK = (1 << 13) - 1  # This bitmask ensures that the result (post-left shift) remains 24-bit.
+STEP_THREE_LEFT_SHIFT = 11          # This is effectively a multiplier of      2,048.
+MAX_SECRET_NUMBER = (1 << 24) - 1   # This is effectively a modulus    of 16,777,216.
 
 
 def parse_initial_secret_numbers(lines: Iterable[str]) -> Iterator[int]:
-    return (int(line) for line in lines)
+    for line in lines:
+        assert 0 <= (initial_secret_number := int(line)) <= MAX_SECRET_NUMBER
+        yield initial_secret_number
 
 
 def next_secret_number(secret_number: int) -> int:
-    next_secret_number = ((secret_number << STEP_ONE_LEFT_SHIFT) ^ secret_number) & SECRET_NUMBER_BITMASK
-    next_secret_number = ((next_secret_number >> STEP_TWO_RIGHT_SHIFT) ^ next_secret_number) & SECRET_NUMBER_BITMASK
-    next_secret_number = ((next_secret_number << STEP_THREE_LEFT_SHIFT) ^ next_secret_number) & SECRET_NUMBER_BITMASK
+    # We'll assume `secret_number` is a valid 24-bit unsigned integer.
+    next_secret_number = ((secret_number & STEP_ONE_BITMASK) << STEP_ONE_LEFT_SHIFT) ^ secret_number
+    next_secret_number = (next_secret_number >> STEP_TWO_RIGHT_SHIFT) ^ next_secret_number
+    next_secret_number = ((next_secret_number & STEP_THREE_BITMASK) << STEP_THREE_LEFT_SHIFT) ^ next_secret_number
     return next_secret_number
 
 
