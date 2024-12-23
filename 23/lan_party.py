@@ -14,7 +14,6 @@ from itertools import combinations
 ########################################################################################################################
 
 CONNECTION_DELIMITER = '-'
-CHIEF_HISTORIAN_COMPUTER_NAME_PREFIX = 't'
 
 
 def parse_network_map(lines: Iterable[str]) -> dict[str, set[str]]:
@@ -73,9 +72,61 @@ def sets_of_three_interconnected_computers(adjacency_list: dict[str, set[str]]) 
         processed_computer_names.add(a)
 
 
+def largest_set_of_interconnected_computers(adjacency_list: dict[str, set[str]]) -> tuple[str, ...]:
+    """
+    >>> largest_set_of_interconnected_computers(parse_network_map([
+    ...     'kh-tc',
+    ...     'qp-kh',
+    ...     'de-cg',
+    ...     'ka-co',
+    ...     'yn-aq',
+    ...     'qp-ub',
+    ...     'cg-tb',
+    ...     'vc-aq',
+    ...     'tb-ka',
+    ...     'wh-tc',
+    ...     'yn-cg',
+    ...     'kh-ub',
+    ...     'ta-co',
+    ...     'de-co',
+    ...     'tc-td',
+    ...     'tb-wq',
+    ...     'wh-td',
+    ...     'ta-ka',
+    ...     'td-qp',
+    ...     'aq-cg',
+    ...     'wq-ub',
+    ...     'ub-vc',
+    ...     'de-ta',
+    ...     'wq-aq',
+    ...     'wq-vc',
+    ...     'wh-yn',
+    ...     'ka-de',
+    ...     'kh-ta',
+    ...     'co-tc',
+    ...     'wh-qp',
+    ...     'tb-vc',
+    ...     'td-yn',
+    ... ]))
+    ('co', 'de', 'ka', 'ta')
+    """
+    largest_set_of_interconnected_computers: set[str] = set()
+    for a in adjacency_list.keys():
+        common_set_of_interconnected_computers = {a, *adjacency_list[a]}
+        for b in adjacency_list[a]:
+            if b in common_set_of_interconnected_computers:
+                common_set_of_interconnected_computers &= {b, *adjacency_list[b]}
+        if len(common_set_of_interconnected_computers) > len(largest_set_of_interconnected_computers):
+            largest_set_of_interconnected_computers = common_set_of_interconnected_computers
+    return tuple(sorted(largest_set_of_interconnected_computers))
+
+
 ########################################################################################################################
 # Part 1
 ########################################################################################################################
+
+CHIEF_HISTORIAN_COMPUTER_NAME_PREFIX = 't'
+
 
 def count_sets_of_three_interconnected_computers_including_suspect_computer(lines: Iterable[str]) -> int:
     """
@@ -123,6 +174,55 @@ def count_sets_of_three_interconnected_computers_including_suspect_computer(line
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+LAN_PARTY_PASSWORD_COMPUTER_NAME_DELIMITER = ','
+
+
+def get_lan_party_password(lines: Iterable[str]) -> str:
+    """
+    >>> get_lan_party_password([
+    ...     'kh-tc',
+    ...     'qp-kh',
+    ...     'de-cg',
+    ...     'ka-co',
+    ...     'yn-aq',
+    ...     'qp-ub',
+    ...     'cg-tb',
+    ...     'vc-aq',
+    ...     'tb-ka',
+    ...     'wh-tc',
+    ...     'yn-cg',
+    ...     'kh-ub',
+    ...     'ta-co',
+    ...     'de-co',
+    ...     'tc-td',
+    ...     'tb-wq',
+    ...     'wh-td',
+    ...     'ta-ka',
+    ...     'td-qp',
+    ...     'aq-cg',
+    ...     'wq-ub',
+    ...     'ub-vc',
+    ...     'de-ta',
+    ...     'wq-aq',
+    ...     'wq-vc',
+    ...     'wh-yn',
+    ...     'ka-de',
+    ...     'kh-ta',
+    ...     'co-tc',
+    ...     'wh-qp',
+    ...     'tb-vc',
+    ...     'td-yn',
+    ... ])
+    'co,de,ka,ta'
+    """
+    adjacency_list = parse_network_map(lines)
+    return LAN_PARTY_PASSWORD_COMPUTER_NAME_DELIMITER.join(largest_set_of_interconnected_computers(adjacency_list))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -137,6 +237,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_sets_of_three_interconnected_computers_including_suspect_computer(lines))
+    elif args.part == 2:
+        print(get_lan_party_password(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
