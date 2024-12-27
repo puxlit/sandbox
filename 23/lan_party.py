@@ -26,9 +26,9 @@ def parse_network_map(lines: Iterable[str]) -> dict[str, set[str]]:
     return adjacency_list
 
 
-def sets_of_three_interconnected_computers(adjacency_list: dict[str, set[str]]) -> Iterator[tuple[str, str, str]]:
+def three_computer_cliques(adjacency_list: dict[str, set[str]]) -> Iterator[tuple[str, str, str]]:
     """
-    >>> tuple(sets_of_three_interconnected_computers(parse_network_map([
+    >>> tuple(three_computer_cliques(parse_network_map([
     ...     'kh-tc',
     ...     'qp-kh',
     ...     'de-cg',
@@ -72,9 +72,9 @@ def sets_of_three_interconnected_computers(adjacency_list: dict[str, set[str]]) 
         processed_computer_names.add(a)
 
 
-def largest_set_of_interconnected_computers(adjacency_list: dict[str, set[str]]) -> tuple[str, ...]:
+def maximum_clique(adjacency_list: dict[str, set[str]]) -> tuple[str, ...]:
     """
-    >>> largest_set_of_interconnected_computers(parse_network_map([
+    >>> maximum_clique(parse_network_map([
     ...     'kh-tc',
     ...     'qp-kh',
     ...     'de-cg',
@@ -110,15 +110,15 @@ def largest_set_of_interconnected_computers(adjacency_list: dict[str, set[str]])
     ... ]))
     ('co', 'de', 'ka', 'ta')
     """
-    largest_set_of_interconnected_computers: set[str] = set()
+    maximum_clique: set[str] = set()
     for a in adjacency_list.keys():
-        common_set_of_interconnected_computers = {a, *adjacency_list[a]}
+        clique = {a, *adjacency_list[a]}
         for b in adjacency_list[a]:
-            if b in common_set_of_interconnected_computers:
-                common_set_of_interconnected_computers &= {b, *adjacency_list[b]}
-        if len(common_set_of_interconnected_computers) > len(largest_set_of_interconnected_computers):
-            largest_set_of_interconnected_computers = common_set_of_interconnected_computers
-    return tuple(sorted(largest_set_of_interconnected_computers))
+            if b in clique:
+                clique &= {b, *adjacency_list[b]}
+        if len(clique) > len(maximum_clique):
+            maximum_clique = clique
+    return tuple(sorted(maximum_clique))
 
 
 ########################################################################################################################
@@ -169,7 +169,7 @@ def count_sets_of_three_interconnected_computers_including_suspect_computer(line
     adjacency_list = parse_network_map(lines)
     return sum(
         any(computer_name.startswith(CHIEF_HISTORIAN_COMPUTER_NAME_PREFIX) for computer_name in computer_names)
-        for computer_names in sets_of_three_interconnected_computers(adjacency_list)
+        for computer_names in three_computer_cliques(adjacency_list)
     )
 
 
@@ -219,7 +219,7 @@ def get_lan_party_password(lines: Iterable[str]) -> str:
     'co,de,ka,ta'
     """
     adjacency_list = parse_network_map(lines)
-    return LAN_PARTY_PASSWORD_COMPUTER_NAME_DELIMITER.join(largest_set_of_interconnected_computers(adjacency_list))
+    return LAN_PARTY_PASSWORD_COMPUTER_NAME_DELIMITER.join(maximum_clique(adjacency_list))
 
 
 ########################################################################################################################
