@@ -451,6 +451,12 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                 unknown_input_wires = input_wires - isomorphism.keys()
                 logger.info(f"      - {describe_gate_connection(input_wires, gate, output_wire)}: skipping because we don't know about the {pluralise(unknown_input_wires, 'input wire')} {' and '.join(sorted(unknown_input_wires))}")
                 continue
+            if ((input_wires, gate) == last_problematic_gate) and (grace_loops == 1):
+                # We flagged this gate as problematic last iteration, so we must be near the end of this iteration.
+                # Restart early so we can do a second pass and hopefully convert some tentative mappings into committed
+                # mappings.
+                logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: encountered problematic gate connection from last pass; restarting early')
+                break
             reference_input_wires = frozenset(isomorphism[wire] for wire in input_wires)
             if (reference_input_wires, gate) not in inverse_reference_gate_connections:
                 # We've found an inconsistency: based on the mappings we know, we can't find the equivalent reference
@@ -459,7 +465,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                 logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: 🚨 no equivalent reference {describe_gate_connection(reference_input_wires, gate)}; discarding {pluralise(tentative_isomorphism, "tentative mapping")} and restarting')
                 if output_wire in committed_isomorphism:
                     (reference_input_wire_a, reference_input_wire_b, reference_gate) = reference_gate_connections[committed_isomorphism[output_wire]]
-                    if reference_gate == gate:
+                    if (reference_gate == gate) and (reference_input_wire_a in inverse_isomorphism) and (reference_input_wire_b in inverse_isomorphism):
                         problematic_wires = input_wires ^ {inverse_isomorphism[reference_input_wire_a], inverse_isomorphism[reference_input_wire_b]}
                         if len(problematic_wires) == 2:
                             output_wire = (set(problematic_wires) & input_wires).pop()
@@ -476,6 +482,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                             inverse_gate_connections[(input_wires, gate)] = correct_output_wire
                             gate_connections[output_wire] = (other_input_wire_a, other_input_wire_b, other_gate)
                             inverse_gate_connections[(other_input_wires, other_gate)] = output_wire
+                            last_problematic_gate = None
                             grace_loops = 2
                             tentative_isomorphism.clear()
                             inverse_tentative_isomorphism.clear()
@@ -508,6 +515,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                         inverse_gate_connections[(input_wires, gate)] = correct_output_wire
                         gate_connections[output_wire] = (other_input_wire_a, other_input_wire_b, other_gate)
                         inverse_gate_connections[(other_input_wires, other_gate)] = output_wire
+                        last_problematic_gate = None
                         grace_loops = 2
                     else:
                         del inverse_gate_connections[(input_wires, gate)]
@@ -541,6 +549,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                     inverse_gate_connections[(input_wires, gate)] = correct_output_wire
                     gate_connections[output_wire] = (other_input_wire_a, other_input_wire_b, other_gate)
                     inverse_gate_connections[(other_input_wires, other_gate)] = output_wire
+                    last_problematic_gate = None
                     grace_loops = 2
                 else:
                     del inverse_gate_connections[(input_wires, gate)]
