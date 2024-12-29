@@ -464,13 +464,15 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                 # flush everything we're unsure about, and start again.
                 logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: 🚨 no equivalent reference {describe_gate_connection(reference_input_wires, gate)}; discarding {pluralise(tentative_isomorphism, "tentative mapping")} and restarting')
                 if output_wire in committed_isomorphism:
-                    (reference_input_wire_a, reference_input_wire_b, reference_gate) = reference_gate_connections[committed_isomorphism[output_wire]]
-                    if (reference_gate == gate) and (reference_input_wire_a in inverse_isomorphism) and (reference_input_wire_b in inverse_isomorphism):
+                    reference_output_wire = committed_isomorphism[output_wire]
+                    (reference_input_wire_a, reference_input_wire_b, reference_gate) = reference_gate_connections[reference_output_wire]
+                    reference_input_wires = frozenset((reference_input_wire_a, reference_input_wire_b))
+                    if (reference_gate == gate) and reference_input_wires.issubset(inverse_isomorphism):
                         problematic_wires = input_wires ^ {inverse_isomorphism[reference_input_wire_a], inverse_isomorphism[reference_input_wire_b]}
                         if len(problematic_wires) == 2:
                             output_wire = (set(problematic_wires) & input_wires).pop()
                             correct_output_wire = (set(problematic_wires) - {output_wire}).pop()
-                            logger.info(f'          - will try swapping output wires {output_wire} and {correct_output_wire}')
+                            logger.info(f'          - assuming equivalent reference should be {describe_gate_connection(reference_input_wires, reference_gate, reference_output_wire)}, will try swapping output wires {output_wire} and {correct_output_wire}')
                             assert (output_wire not in swapped_output_wires) and (correct_output_wire not in swapped_output_wires)
                             swapped_output_wires.update((output_wire, correct_output_wire))
                             swapped_pairs_of_output_wires.append((output_wire, correct_output_wire) if (output_wire < correct_output_wire) else (correct_output_wire, output_wire))
@@ -501,7 +503,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                     # We've found an inconsistency: we're about to have two wires map to the same reference wire. We
                     # must've learned a bad mapping. Move the problematic gate connection to the end of the queue, flush
                     # everything we're unsure about, and start again.
-                    logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: 🚨 was about to tentatively learn mapping {output_wire} ↔ {reference_output_wire}, but already learned {inverse_isomorphism[reference_output_wire]} ↔ {reference_output_wire}; discarding {pluralise(tentative_isomorphism, "tentative mapping")} and restarting')
+                    logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: 🚨 matched equivalent reference {describe_gate_connection(reference_input_wires, gate, reference_output_wire)}, was about to tentatively learn mapping {output_wire} ↔ {reference_output_wire}, but already learned {inverse_isomorphism[reference_output_wire]} ↔ {reference_output_wire}; discarding {pluralise(tentative_isomorphism, "tentative mapping")} and restarting')
                     if reference_output_wire in inverse_committed_isomorphism:
                         correct_output_wire = inverse_committed_isomorphism[reference_output_wire]
                         logger.info(f'          - will try swapping output wires {output_wire} and {correct_output_wire}')
@@ -528,7 +530,7 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                     break
                 else:
                     # Tentatively learn this mapping.
-                    logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: tentatively learning mapping {output_wire} ↔ {reference_output_wire}')
+                    logger.info(f'      - {describe_gate_connection(input_wires, gate, output_wire)}: matched equivalent reference {describe_gate_connection(reference_input_wires, gate, reference_output_wire)}, tentatively learning mapping {output_wire} ↔ {reference_output_wire}')
                     tentative_isomorphism[output_wire] = reference_output_wire
                     inverse_tentative_isomorphism[reference_output_wire] = output_wire
             elif reference_output_wire != isomorphism[output_wire]:
@@ -568,8 +570,8 @@ def identify_swapped_pairs_of_output_wires(gate_connections: dict[str, tuple[str
                 while output_wires:
                     output_wire = output_wires.popleft()
                     if output_wire in tentative_isomorphism:
-                        logger.info(f'          - committing mapping {output_wire} ↔ {reference_output_wire}')
                         reference_output_wire = tentative_isomorphism[output_wire]
+                        logger.info(f'          - committing mapping {output_wire} ↔ {reference_output_wire}')
                         committed_isomorphism[output_wire] = reference_output_wire
                         inverse_committed_isomorphism[reference_output_wire] = output_wire
                         del tentative_isomorphism[output_wire]
