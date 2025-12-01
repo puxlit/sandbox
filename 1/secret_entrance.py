@@ -96,6 +96,10 @@ def execute_click_rotations(dial_size: int, dial_starting_position: int, rotatio
     [(1, 82), (0, 52), (1, 0), (0, 95), (1, 55), (1, 0), (0, 99), (1, 0), (0, 14), (1, 32)]
     >>> list(execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, [1000]))
     [(10, 50)]
+    >>> list(execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, [-50, -1]))
+    [(1, 0), (0, 99)]
+    >>> list(execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, [-50, -101]))
+    [(1, 0), (1, 99)]
     """
     assert dial_size > 0
     assert 0 <= dial_starting_position < dial_size
@@ -105,7 +109,7 @@ def execute_click_rotations(dial_size: int, dial_starting_position: int, rotatio
         (signed_clicks, new_dial_position) = divmod(raw_new_dial_position, dial_size)
         clicks = abs(signed_clicks)
         # If we turn left from zero, then `divmod(-1, 100) == (-1, 99)`, which we need to adjust for.
-        if (dial_position == 0) and (rotation < 0) and (raw_new_dial_position > -dial_size):
+        if (dial_position == 0) and (rotation < 0) and (new_dial_position != 0):
             clicks -= 1
         # If we turn left from anywhere to zero, then `divmod(0, 100) == (0, 0)`, which we need to adjust for.
         elif (rotation < 0) and (raw_new_dial_position == 0):
