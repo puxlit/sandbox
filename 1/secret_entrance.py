@@ -87,6 +87,58 @@ def derive_password(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def execute_click_rotations(dial_size: int, dial_starting_position: int, rotations: Iterable[int]) -> Iterator[tuple[int, int]]:
+    """
+    >>> list(execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, [-68, -30, 48, -5, 60, -55, -1, -99, 14, -82]))
+    [(1, 82), (0, 52), (1, 0), (0, 95), (1, 55), (1, 0), (0, 99), (1, 0), (0, 14), (1, 32)]
+    >>> list(execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, [1000]))
+    [(10, 50)]
+    """
+    assert dial_size > 0
+    assert 0 <= dial_starting_position < dial_size
+    dial_position = dial_starting_position
+    for rotation in rotations:
+        raw_new_dial_position = dial_position + rotation
+        (signed_clicks, new_dial_position) = divmod(raw_new_dial_position, dial_size)
+        clicks = abs(signed_clicks)
+        # If we turn left from zero, then `divmod(-1, 100) == (-1, 99)`, which we need to adjust for.
+        if (dial_position == 0) and (rotation < 0) and (raw_new_dial_position > -dial_size):
+            clicks -= 1
+        # If we turn left from anywhere to zero, then `divmod(0, 100) == (0, 0)`, which we need to adjust for.
+        elif (rotation < 0) and (raw_new_dial_position == 0):
+            clicks += 1
+        dial_position = new_dial_position
+        yield (clicks, dial_position)
+
+
+def derive_click_password(lines: Iterable[str]) -> int:
+    """
+    >>> derive_click_password([
+    ...     'L68',
+    ...     'L30',
+    ...     'R48',
+    ...     'L5',
+    ...     'R60',
+    ...     'L55',
+    ...     'L1',
+    ...     'L99',
+    ...     'R14',
+    ...     'L82',
+    ... ])
+    6
+    >>> derive_click_password([
+    ...     'R1000',
+    ... ])
+    10
+    """
+    rotations = parse_rotations(lines)
+    return sum(clicks for (clicks, _) in execute_click_rotations(DIAL_SIZE, DIAL_STARTING_POSITION, rotations))
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -101,6 +153,8 @@ def main() -> None:
 
     if args.part == 1:
         print(derive_password(lines))
+    elif args.part == 2:
+        print(derive_click_password(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
