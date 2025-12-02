@@ -183,6 +183,10 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
     [1010, 1111, 1212, 1313, 1414, 1515, 1616, 1717, 1818, 1919, 2020, 2121, 2222]
     >>> sorted(enumerate_extended_invalid_product_ids(6699, 7812))
     [6767, 6868, 6969, 7070, 7171, 7272, 7373, 7474, 7575, 7676, 7777]
+    >>> sorted(enumerate_extended_invalid_product_ids(19, 91))
+    [22, 33, 44, 55, 66, 77, 88]
+    >>> sorted(enumerate_extended_invalid_product_ids(655599, 656565))
+    [655655, 656565]
     """
     assert 1 <= lower_bound <= upper_bound
 
@@ -198,11 +202,12 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
             continue
         piece_divisor = 10 ** piece_digits
 
-        lower_piece_bound = max(10 ** (piece_digits - 1), lower_bound // (10 ** (bound_digits - piece_digits)))
-        if lower_piece_bound < (lower_bound % piece_divisor):
+        lower_piece_bound = lower_bound // (10 ** (bound_digits - piece_digits))
+        # For example, the lower two-digit piece bound for 655599 is 65.
+        if lower_piece_bound < ((lower_bound // (10 ** (bound_digits - (piece_digits * 2)))) % piece_divisor):
             # For example, the lower two-digit piece bound for 6699 is 67.
             lower_piece_bound += 1
-        upper_piece_bound = min(piece_divisor - 1, upper_bound // (10 ** (bound_digits - piece_digits)))
+        upper_piece_bound = upper_bound // (10 ** (bound_digits - piece_digits))
         if upper_piece_bound > (upper_bound % piece_divisor):
             # For example, the upper two-digit piece bound for 7812 is 77.
             upper_piece_bound -= 1
