@@ -240,11 +240,20 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
             # For example, the upper two-digit piece bound for 656664 is 65.
             break
 
+        if lower_piece_bound > upper_piece_bound:
+            continue
+
         piece_divisor = 10 ** piece_digits
-        for piece in range(lower_piece_bound, upper_piece_bound + 1):
-            invalid_product_id = piece
-            for _ in range(num_pieces - 1):
-                invalid_product_id = (invalid_product_id * piece_divisor) + piece
+        delta = 1
+        for _ in range(num_pieces - 1):
+            delta = (delta * piece_divisor) + 1
+        invalid_product_id = delta * lower_piece_bound
+        assert lower_bound <= invalid_product_id <= upper_bound
+        if invalid_product_id not in witnessed_invalid_product_id:
+            yield invalid_product_id
+            witnessed_invalid_product_id.add(invalid_product_id)
+        for _ in range(lower_piece_bound + 1, upper_piece_bound + 1):
+            invalid_product_id += delta
             assert lower_bound <= invalid_product_id <= upper_bound
             if invalid_product_id not in witnessed_invalid_product_id:
                 yield invalid_product_id
