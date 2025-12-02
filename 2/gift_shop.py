@@ -208,7 +208,7 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
             # For example, the lower two-digit piece bound for 6699 is 67.
             lower_piece_bound += 1
         upper_piece_bound = upper_bound // (10 ** (bound_digits - piece_digits))
-        if upper_piece_bound > (upper_bound % piece_divisor):
+        if upper_piece_bound > ((upper_bound // (10 ** (bound_digits - (piece_digits * 2)))) % piece_divisor):
             # For example, the upper two-digit piece bound for 7812 is 77.
             upper_piece_bound -= 1
 
