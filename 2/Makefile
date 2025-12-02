@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 SESSION_COOKIE_VALUE ?= $(shell bash -c 'read -sp "Session cookie value: " SESSION_COOKIE_VALUE; echo $$SESSION_COOKIE_VALUE')
 
-all: part_1_answer.txt
+all: part_1_answer.txt part_2_answer.txt
 
 .SUFFIXES:
 
@@ -10,7 +10,7 @@ check: gift_shop.py
 	python3 -m doctest -v gift_shop.py
 
 clean:
-	rm -f part_1_answer.txt
+	rm -f part_1_answer.txt part_2_answer.txt
 
 clobber: clean
 	rm -f input.txt input.txt.gpg
@@ -23,5 +23,8 @@ input.txt.gpg: input.txt
 
 part_1_answer.txt: gift_shop.py input.txt
 	python3 gift_shop.py 1 input.txt >$@
+
+part_2_answer.txt: gift_shop.py input.txt
+	python3 gift_shop.py 2 input.txt >$@
 
 .PHONY: all check clean clobber
