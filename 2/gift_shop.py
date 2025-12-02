@@ -181,6 +181,8 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
 
     >>> sorted(enumerate_extended_invalid_product_ids(1000, 2222))
     [1010, 1111, 1212, 1313, 1414, 1515, 1616, 1717, 1818, 1919, 2020, 2121, 2222]
+    >>> sorted(enumerate_extended_invalid_product_ids(6699, 7812))
+    [6767, 6868, 6969, 7070, 7171, 7272, 7373, 7474, 7575, 7676, 7777]
     """
     assert 1 <= lower_bound <= upper_bound
 
@@ -197,7 +199,13 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
         piece_divisor = 10 ** piece_digits
 
         lower_piece_bound = max(10 ** (piece_digits - 1), lower_bound // (10 ** (bound_digits - piece_digits)))
-        upper_piece_bound = min(piece_divisor - 1, upper_bound % piece_divisor)
+        if lower_piece_bound < (lower_bound % piece_divisor):
+            # For example, the lower two-digit piece bound for 6699 is 67.
+            lower_piece_bound += 1
+        upper_piece_bound = min(piece_divisor - 1, upper_bound // (10 ** (bound_digits - piece_digits)))
+        if upper_piece_bound > (upper_bound % piece_divisor):
+            # For example, the upper two-digit piece bound for 7812 is 77.
+            upper_piece_bound -= 1
 
         for piece in range(lower_piece_bound, upper_piece_bound + 1):
             invalid_product_id = piece
