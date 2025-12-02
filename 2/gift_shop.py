@@ -141,6 +141,24 @@ def simplify_bounds(lower_bound: int, upper_bound: int) -> Iterator[tuple[int, i
     yield (10 ** (upper_bound_digits - 1), upper_bound)
 
 
+def split_pieces(number: int, piece_digits: int) -> Iterator[int]:
+    """
+    >>> list(split_pieces(123456, 1))
+    [1, 2, 3, 4, 5, 6]
+    >>> list(split_pieces(123456, 2))
+    [12, 34, 56]
+    >>> list(split_pieces(123456, 3))
+    [123, 456]
+    """
+    assert (number > 0) and (piece_digits > 0)
+    number_digits = count_digits(number)
+    assert number_digits % piece_digits == 0
+
+    piece_divisor = 10 ** piece_digits
+    for digits_to_truncate in range(number_digits - piece_digits, -1, -piece_digits):
+        yield (number // (10 ** digits_to_truncate)) % piece_divisor
+
+
 def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -> Iterator[int]:
     """
     >>> list(enumerate_extended_invalid_product_ids(12341234, 12341234))
@@ -185,8 +203,8 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
     [6767, 6868, 6969, 7070, 7171, 7272, 7373, 7474, 7575, 7676, 7777]
     >>> sorted(enumerate_extended_invalid_product_ids(19, 91))
     [22, 33, 44, 55, 66, 77, 88]
-    >>> sorted(enumerate_extended_invalid_product_ids(655599, 656565))
-    [655655, 656565]
+    >>> sorted(enumerate_extended_invalid_product_ids(655599, 656664))
+    [655655, 656565, 656656]
     """
     assert 1 <= lower_bound <= upper_bound
 
@@ -200,27 +218,37 @@ def enumerate_extended_invalid_product_ids(lower_bound: int, upper_bound: int) -
         if remainder:
             # For example, we can't do two-digit pieces for 1234567.
             continue
+
+        lower_bound_pieces = split_pieces(lower_bound, piece_digits)
+        lower_piece_bound = next(lower_bound_pieces)
+        for next_piece in lower_bound_pieces:
+            if lower_piece_bound == next_piece:
+                continue
+            if lower_piece_bound < next_piece:
+                # For example, the lower two-digit piece bound for 6699 is 67.
+                lower_piece_bound += 1
+            # For example, the lower two-digit piece bound for 655599 is 65.
+            break
+        upper_bound_pieces = split_pieces(upper_bound, piece_digits)
+        upper_piece_bound = next(upper_bound_pieces)
+        for next_piece in upper_bound_pieces:
+            if upper_piece_bound == next_piece:
+                continue
+            if upper_piece_bound > next_piece:
+                # For example, the upper two-digit piece bound for 7812 is 77.
+                upper_piece_bound -= 1
+            # For example, the upper two-digit piece bound for 656664 is 65.
+            break
+
         piece_divisor = 10 ** piece_digits
-
-        lower_piece_bound = lower_bound // (10 ** (bound_digits - piece_digits))
-        # For example, the lower two-digit piece bound for 655599 is 65.
-        if lower_piece_bound < ((lower_bound // (10 ** (bound_digits - (piece_digits * 2)))) % piece_divisor):
-            # For example, the lower two-digit piece bound for 6699 is 67.
-            lower_piece_bound += 1
-        upper_piece_bound = upper_bound // (10 ** (bound_digits - piece_digits))
-        if upper_piece_bound > ((upper_bound // (10 ** (bound_digits - (piece_digits * 2)))) % piece_divisor):
-            # For example, the upper two-digit piece bound for 7812 is 77.
-            upper_piece_bound -= 1
-
         for piece in range(lower_piece_bound, upper_piece_bound + 1):
             invalid_product_id = piece
             for _ in range(num_pieces - 1):
                 invalid_product_id = (invalid_product_id * piece_divisor) + piece
-            # TODO: Can we improve filtering further and turn this into an assertion?
-            if lower_bound <= invalid_product_id <= upper_bound:
-                if invalid_product_id not in witnessed_invalid_product_id:
-                    yield invalid_product_id
-                    witnessed_invalid_product_id.add(invalid_product_id)
+            assert lower_bound <= invalid_product_id <= upper_bound
+            if invalid_product_id not in witnessed_invalid_product_id:
+                yield invalid_product_id
+                witnessed_invalid_product_id.add(invalid_product_id)
 
 
 def sum_extended_invalid_product_ids(lines: Iterable[str]) -> int:
