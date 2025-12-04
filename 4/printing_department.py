@@ -17,19 +17,16 @@ EMPTY_SPACE = '.'
 PAPER_ROLL = '@'
 
 
-def bake_adjacent_paper_rolls(rows: list[list[int]], width: int, height: int) -> None:
+def bake_neighbourhood_paper_rolls(rows: list[list[int]], width: int, height: int) -> None:
     for y in range(1, height + 1):
         for x in range(1, width + 1):
-            if rows[y][x] >= 0:
-                adjacent_paper_rolls = 0
+            if rows[y][x]:
+                neighbourhood_paper_rolls = 0
                 for kernel_y in (y - 1, y, y + 1):
                     for kernel_x in (x - 1, x, x + 1):
-                        if (kernel_y == y) and (kernel_x == x):
-                            continue
-                        if rows[kernel_y][kernel_x] < 0:
-                            continue
-                        adjacent_paper_rolls += 1
-                rows[y][x] = adjacent_paper_rolls
+                        if rows[kernel_y][kernel_x]:
+                            neighbourhood_paper_rolls += 1
+                rows[y][x] = neighbourhood_paper_rolls
 
 
 class Diagram(NamedTuple):
@@ -45,35 +42,38 @@ class Diagram(NamedTuple):
             # Ensure width is consistent across lines.
             if y == 0:
                 width = len(line)
-                # Introduce top row of padding to reduce operations within `bake_adjacent_paper_rolls`.
-                rows.append([-1] * (width + 2))
+                # Introduce top row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+                rows.append([0] * (width + 2))
             elif len(line) != width:
                 raise ValueError(f'Width of line {y + 1} differs from line 1 ({len(line)} ≠ {width})')
-            # Introduce left and right columns of padding to reduce operations within `bake_adjacent_paper_rolls`.
-            rows.append([-1, *({
-                EMPTY_SPACE: -1,
-                PAPER_ROLL: 0,
-            }[char] for char in line), -1])
-        # Introduce bottom row of padding to reduce operations within `bake_adjacent_paper_rolls`.
-        rows.append([-1] * (width + 2))
+            # Introduce left and right columns of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+            rows.append([0, *({
+                EMPTY_SPACE: 0,
+                PAPER_ROLL: 1,
+            }[char] for char in line), 0])
+        # Introduce bottom row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+        rows.append([0] * (width + 2))
         height = y + 1
-        bake_adjacent_paper_rolls(rows, width, height)
+        bake_neighbourhood_paper_rolls(rows, width, height)
         return Diagram(width, height, tuple(tuple(row) for row in rows))
 
     def count_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
         assert 0 <= max_adjacent_paper_rolls <= 8
+        max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
         return sum(
-            1 if (0 <= adjacent_paper_rolls <= max_adjacent_paper_rolls) else 0
+            1 if (neighbourhood_paper_rolls and neighbourhood_paper_rolls <= max_neighbourhood_paper_rolls) else 0
             for row in self.rows[1:-1]
-            for adjacent_paper_rolls in row[1:-1]
+            for neighbourhood_paper_rolls in row[1:-1]
         )
 
     def prune(self, max_adjacent_paper_rolls: int) -> 'Diagram':
+        assert 0 <= max_adjacent_paper_rolls <= 8
+        max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
         rows = [[
-            -1 if (adjacent_paper_rolls <= max_adjacent_paper_rolls) else 0
-            for adjacent_paper_rolls in row
+            1 if (neighbourhood_paper_rolls > max_neighbourhood_paper_rolls) else 0
+            for neighbourhood_paper_rolls in row
         ] for row in self.rows]
-        bake_adjacent_paper_rolls(rows, self.width, self.height)
+        bake_neighbourhood_paper_rolls(rows, self.width, self.height)
         return Diagram(self.width, self.height, tuple(tuple(row) for row in rows))
 
 
