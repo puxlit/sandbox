@@ -21,13 +21,15 @@ def bake_adjacent_paper_rolls(rows: list[list[int]], width: int, height: int) ->
     for y in range(height):
         for x in range(width):
             if rows[y][x] >= 0:
+                adjacent_paper_rolls = 0
                 for kernel_y in range(max(0, y - 1), min(height, y + 2)):
                     for kernel_x in range(max(0, x - 1), min(width, x + 2)):
                         if (kernel_y == y) and (kernel_x == x):
                             continue
                         if rows[kernel_y][kernel_x] < 0:
                             continue
-                        rows[kernel_y][kernel_x] += 1
+                        adjacent_paper_rolls += 1
+                rows[y][x] = adjacent_paper_rolls
 
 
 class Diagram(NamedTuple):
