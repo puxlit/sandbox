@@ -18,12 +18,12 @@ PAPER_ROLL = '@'
 
 
 def bake_adjacent_paper_rolls(rows: list[list[int]], width: int, height: int) -> None:
-    for y in range(height):
-        for x in range(width):
+    for y in range(1, height + 1):
+        for x in range(1, width + 1):
             if rows[y][x] >= 0:
                 adjacent_paper_rolls = 0
-                for kernel_y in range(max(0, y - 1), min(height, y + 2)):
-                    for kernel_x in range(max(0, x - 1), min(width, x + 2)):
+                for kernel_y in (y - 1, y, y + 1):
+                    for kernel_x in (x - 1, x, x + 1):
                         if (kernel_y == y) and (kernel_x == x):
                             continue
                         if rows[kernel_y][kernel_x] < 0:
@@ -45,12 +45,17 @@ class Diagram(NamedTuple):
             # Ensure width is consistent across lines.
             if y == 0:
                 width = len(line)
+                # Introduce top row of padding to reduce operations within `bake_adjacent_paper_rolls`.
+                rows.append([-1] * (width + 2))
             elif len(line) != width:
                 raise ValueError(f'Width of line {y + 1} differs from line 1 ({len(line)} ≠ {width})')
-            rows.append([{
+            # Introduce left and right columns of padding to reduce operations within `bake_adjacent_paper_rolls`.
+            rows.append([-1, *({
                 EMPTY_SPACE: -1,
                 PAPER_ROLL: 0,
-            }[char] for char in line])
+            }[char] for char in line), -1])
+        # Introduce bottom row of padding to reduce operations within `bake_adjacent_paper_rolls`.
+        rows.append([-1] * (width + 2))
         height = y + 1
         bake_adjacent_paper_rolls(rows, width, height)
         return Diagram(width, height, tuple(tuple(row) for row in rows))
@@ -59,8 +64,8 @@ class Diagram(NamedTuple):
         assert 0 <= max_adjacent_paper_rolls <= 8
         return sum(
             1 if (0 <= adjacent_paper_rolls <= max_adjacent_paper_rolls) else 0
-            for row in self.rows
-            for adjacent_paper_rolls in row
+            for row in self.rows[1:-1]
+            for adjacent_paper_rolls in row[1:-1]
         )
 
     def prune(self, max_adjacent_paper_rolls: int) -> 'Diagram':
