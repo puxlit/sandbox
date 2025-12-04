@@ -17,6 +17,19 @@ EMPTY_SPACE = '.'
 PAPER_ROLL = '@'
 
 
+def bake_adjacent_paper_rolls(rows: list[list[int]], width: int, height: int) -> None:
+    for y in range(height):
+        for x in range(width):
+            if rows[y][x] >= 0:
+                for kernel_y in range(max(0, y - 1), min(height, y + 2)):
+                    for kernel_x in range(max(0, x - 1), min(width, x + 2)):
+                        if (kernel_y == y) and (kernel_x == x):
+                            continue
+                        if rows[kernel_y][kernel_x] < 0:
+                            continue
+                        rows[kernel_y][kernel_x] += 1
+
+
 class Diagram(NamedTuple):
     width: int
     height: int
@@ -37,16 +50,7 @@ class Diagram(NamedTuple):
                 PAPER_ROLL: 0,
             }[char] for char in line])
         height = y + 1
-        for y in range(height):
-            for x in range(width):
-                if rows[y][x] >= 0:
-                    for kernel_y in range(max(0, y - 1), min(height, y + 2)):
-                        for kernel_x in range(max(0, x - 1), min(width, x + 2)):
-                            if (kernel_y == y) and (kernel_x == x):
-                                continue
-                            if rows[kernel_y][kernel_x] < 0:
-                                continue
-                            rows[kernel_y][kernel_x] += 1
+        bake_adjacent_paper_rolls(rows, width, height)
         return Diagram(width, height, tuple(tuple(row) for row in rows))
 
     def count_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
@@ -56,6 +60,14 @@ class Diagram(NamedTuple):
             for row in self.rows
             for adjacent_paper_rolls in row
         )
+
+    def prune(self, max_adjacent_paper_rolls: int) -> 'Diagram':
+        rows = [[
+            -1 if (adjacent_paper_rolls <= max_adjacent_paper_rolls) else 0
+            for adjacent_paper_rolls in row
+        ] for row in self.rows]
+        bake_adjacent_paper_rolls(rows, self.width, self.height)
+        return Diagram(self.width, self.height, tuple(tuple(row) for row in rows))
 
 
 ########################################################################################################################
@@ -85,6 +97,34 @@ def count_accessible_paper_rolls(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_potentially_accessible_paper_rolls(lines: Iterable[str]) -> int:
+    """
+    >>> count_potentially_accessible_paper_rolls([
+    ...     '..@@.@@@@.',
+    ...     '@@@.@.@.@@',
+    ...     '@@@@@.@.@@',
+    ...     '@.@@@@..@.',
+    ...     '@@.@@@@.@@',
+    ...     '.@@@@@@@.@',
+    ...     '.@.@.@.@@@',
+    ...     '@.@@@.@@@@',
+    ...     '.@@@@@@@@.',
+    ...     '@.@.@@@.@.',
+    ... ])
+    43
+    """
+    diagram = Diagram.from_lines(lines)
+    accessible_paper_rolls = diagram.count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
+    while (pruned_diagram := diagram.prune(MAX_ADJACENT_PAPER_ROLLS)) != diagram:
+        accessible_paper_rolls += pruned_diagram.count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
+        diagram = pruned_diagram
+    return accessible_paper_rolls
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -99,6 +139,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_accessible_paper_rolls(lines))
+    elif args.part == 2:
+        print(count_potentially_accessible_paper_rolls(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
