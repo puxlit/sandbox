@@ -17,64 +17,83 @@ EMPTY_SPACE = '.'
 PAPER_ROLL = '@'
 
 
-def bake_neighbourhood_paper_rolls(rows: list[list[int]], width: int, height: int) -> None:
-    for y in range(1, height + 1):
-        for x in range(1, width + 1):
-            if rows[y][x]:
-                neighbourhood_paper_rolls = 0
-                for kernel_y in (y - 1, y, y + 1):
-                    for kernel_x in (x - 1, x, x + 1):
-                        if rows[kernel_y][kernel_x]:
-                            neighbourhood_paper_rolls += 1
-                rows[y][x] = neighbourhood_paper_rolls
+def bake_neighbourhood_paper_rolls(tiles: list[int], indices: tuple[int, ...], kernel_offsets: tuple[int, int, int, int, int, int, int, int]) -> None:
+    for i in indices:
+        if tiles[i]:
+            adjacent_paper_rolls = 0
+            for kernel_i in kernel_offsets:
+                if tiles[i + kernel_i]:
+                    adjacent_paper_rolls += 1
+            tiles[i] += adjacent_paper_rolls
 
 
 class Diagram(NamedTuple):
     width: int
     height: int
-    rows: tuple[tuple[int, ...], ...]
+    tiles: tuple[int, ...]
+    indices: tuple[int, ...]
+    kernel_offsets: tuple[int, int, int, int, int, int, int, int]
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> 'Diagram':
-        width = -1
-        rows: list[list[int]] = []
+        width = padded_width = -1
+        tiles: list[int] = []
         for (y, line) in enumerate(lines):
             # Ensure width is consistent across lines.
             if y == 0:
                 width = len(line)
+                padded_width = width + 2
                 # Introduce top row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
-                rows.append([0] * (width + 2))
+                tiles.extend([0] * padded_width)
             elif len(line) != width:
                 raise ValueError(f'Width of line {y + 1} differs from line 1 ({len(line)} ≠ {width})')
             # Introduce left and right columns of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
-            rows.append([0, *({
+            tiles.extend([0, *({
                 EMPTY_SPACE: 0,
                 PAPER_ROLL: 1,
             }[char] for char in line), 0])
         # Introduce bottom row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
-        rows.append([0] * (width + 2))
+        tiles.extend([0] * padded_width)
         height = y + 1
-        bake_neighbourhood_paper_rolls(rows, width, height)
-        return Diagram(width, height, tuple(tuple(row) for row in rows))
+        padded_height = height + 2
+        assert len(tiles) == padded_width * padded_height
+
+        indices = tuple(
+            (padded_width * (y + 1)) + (x + 1)
+            for y in range(height)
+            for x in range(width)
+        )
+        assert len(indices) == width * height
+        kernel_offsets = (
+            -padded_width - 1,  # North-west
+            -padded_width,      # North tile
+            -padded_width + 1,  # North-east
+            -1,                 # West
+            1,                  # East
+            padded_width - 1,   # South-west
+            padded_width,       # South
+            padded_width + 1,   # South-east
+        )
+        bake_neighbourhood_paper_rolls(tiles, indices, kernel_offsets)
+        return Diagram(width, height, tuple(tiles), indices, kernel_offsets)
 
     def count_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
         assert 0 <= max_adjacent_paper_rolls <= 8
         max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
         return sum(
-            1 if (neighbourhood_paper_rolls and neighbourhood_paper_rolls <= max_neighbourhood_paper_rolls) else 0
-            for row in self.rows[1:-1]
-            for neighbourhood_paper_rolls in row[1:-1]
+            1 if (self.tiles[i] and self.tiles[i] <= max_neighbourhood_paper_rolls) else 0
+            for i in self.indices
         )
 
     def prune(self, max_adjacent_paper_rolls: int) -> 'Diagram':
         assert 0 <= max_adjacent_paper_rolls <= 8
         max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
-        rows = [[
+        tiles = [
             1 if (neighbourhood_paper_rolls > max_neighbourhood_paper_rolls) else 0
-            for neighbourhood_paper_rolls in row
-        ] for row in self.rows]
-        bake_neighbourhood_paper_rolls(rows, self.width, self.height)
-        return Diagram(self.width, self.height, tuple(tuple(row) for row in rows))
+            for neighbourhood_paper_rolls in self.tiles
+        ]
+        bake_neighbourhood_paper_rolls(tiles, self.indices, self.kernel_offsets)
+        return Diagram(self.width, self.height, tuple(tiles), self.indices, self.kernel_offsets)
 
 
 ########################################################################################################################
