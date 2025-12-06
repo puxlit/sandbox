@@ -190,9 +190,9 @@ def parse_database(lines: Iterable[str]) -> tuple[tuple[Range, ...], Iterator[in
     return (fresh_ingredient_ranges, available_ingredients)
 
 
-def count_fresh_ingredients(lines: Iterable[str]) -> int:
+def count_available_fresh_ingredients(lines: Iterable[str]) -> int:
     """
-    >>> count_fresh_ingredients([
+    >>> count_available_fresh_ingredients([
     ...     '3-5',
     ...     '10-14',
     ...     '16-20',
@@ -215,6 +215,34 @@ def count_fresh_ingredients(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_potential_fresh_ingredients(lines: Iterable[str]) -> int:
+    """
+    >>> count_potential_fresh_ingredients([
+    ...     '3-5',
+    ...     '10-14',
+    ...     '16-20',
+    ...     '12-18',
+    ...     '',
+    ...     '1',
+    ...     '5',
+    ...     '8',
+    ...     '11',
+    ...     '17',
+    ...     '32',
+    ... ])
+    14
+    """
+    (fresh_ingredient_ranges, _) = parse_database(lines)
+    return sum(
+        range_.upper_bound - range_.lower_bound + 1
+        for range_ in fresh_ingredient_ranges
+    )
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -228,7 +256,9 @@ def main() -> None:
     lines = (line.rstrip('\n') for line in args.input)
 
     if args.part == 1:
-        print(count_fresh_ingredients(lines))
+        print(count_available_fresh_ingredients(lines))
+    elif args.part == 2:
+        print(count_potential_fresh_ingredients(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
