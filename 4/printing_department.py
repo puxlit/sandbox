@@ -89,21 +89,21 @@ class Diagram:
             for i in self.indices
         )
 
-    def count_and_sweep_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
+    def mark_and_sweep_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
         assert 0 <= max_adjacent_paper_rolls <= 8
-        max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
         accessible_paper_rolls = 0
         # Reduce attribute lookups.
         tiles = self.tiles
+        kernel_offsets = self.kernel_offsets
         for i in self.indices:
-            neighbourhood_paper_rolls = tiles[i]
-            if not neighbourhood_paper_rolls:
-                continue
-            if neighbourhood_paper_rolls <= max_neighbourhood_paper_rolls:
-                accessible_paper_rolls += 1
-                tiles[i] = 0
-            else:
-                tiles[i] = 1
+            if tiles[i]:
+                adjacent_paper_rolls = 0
+                for kernel_i in kernel_offsets:
+                    if tiles[i + kernel_i]:
+                        adjacent_paper_rolls += 1
+                if adjacent_paper_rolls <= max_adjacent_paper_rolls:
+                    tiles[i] = 0
+                    accessible_paper_rolls += 1
         return accessible_paper_rolls
 
 
@@ -156,11 +156,9 @@ def count_potentially_accessible_paper_rolls(lines: Iterable[str]) -> int:
     43
     """
     diagram = Diagram.from_lines(lines)
-    diagram.mark_neighbourhood_paper_rolls()
     accessible_paper_rolls = 0
-    while (newly_accessible_paper_rolls := diagram.count_and_sweep_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)):
+    while (newly_accessible_paper_rolls := diagram.mark_and_sweep_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)):
         accessible_paper_rolls += newly_accessible_paper_rolls
-        diagram.mark_neighbourhood_paper_rolls()
     return accessible_paper_rolls
 
 
