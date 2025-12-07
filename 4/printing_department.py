@@ -6,7 +6,7 @@
 ########################################################################################################################
 
 from collections.abc import Iterable
-from typing import NamedTuple
+from dataclasses import dataclass
 
 
 ########################################################################################################################
@@ -17,20 +17,11 @@ EMPTY_SPACE = '.'
 PAPER_ROLL = '@'
 
 
-def bake_neighbourhood_paper_rolls(tiles: list[int], indices: tuple[int, ...], kernel_offsets: tuple[int, int, int, int, int, int, int, int]) -> None:
-    for i in indices:
-        if tiles[i]:
-            adjacent_paper_rolls = 0
-            for kernel_i in kernel_offsets:
-                if tiles[i + kernel_i]:
-                    adjacent_paper_rolls += 1
-            tiles[i] += adjacent_paper_rolls
-
-
-class Diagram(NamedTuple):
+@dataclass
+class Diagram:
     width: int
     height: int
-    tiles: tuple[int, ...]
+    tiles: list[int]
     indices: tuple[int, ...]
     kernel_offsets: tuple[int, int, int, int, int, int, int, int]
 
@@ -43,16 +34,16 @@ class Diagram(NamedTuple):
             if y == 0:
                 width = len(line)
                 padded_width = width + 2
-                # Introduce top row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+                # Introduce top row of padding to reduce operations within `mark_neighbourhood_paper_rolls`.
                 tiles.extend([0] * padded_width)
             elif len(line) != width:
                 raise ValueError(f'Width of line {y + 1} differs from line 1 ({len(line)} ≠ {width})')
-            # Introduce left and right columns of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+            # Introduce left and right columns of padding to reduce operations within `mark_neighbourhood_paper_rolls`.
             tiles.extend([0, *({
                 EMPTY_SPACE: 0,
                 PAPER_ROLL: 1,
             }[char] for char in line), 0])
-        # Introduce bottom row of padding to reduce operations within `bake_neighbourhood_paper_rolls`.
+        # Introduce bottom row of padding to reduce operations within `mark_neighbourhood_paper_rolls`.
         tiles.extend([0] * padded_width)
         height = y + 1
         padded_height = height + 2
@@ -74,26 +65,46 @@ class Diagram(NamedTuple):
             padded_width,       # South
             padded_width + 1,   # South-east
         )
-        bake_neighbourhood_paper_rolls(tiles, indices, kernel_offsets)
-        return Diagram(width, height, tuple(tiles), indices, kernel_offsets)
+        return Diagram(width, height, tiles, indices, kernel_offsets)
+
+    def mark_neighbourhood_paper_rolls(self) -> None:
+        # Reduce attribute lookups.
+        tiles = self.tiles
+        kernel_offsets = self.kernel_offsets
+        for i in self.indices:
+            if tiles[i]:
+                adjacent_paper_rolls = 0
+                for kernel_i in kernel_offsets:
+                    if tiles[i + kernel_i]:
+                        adjacent_paper_rolls += 1
+                tiles[i] += adjacent_paper_rolls
 
     def count_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
         assert 0 <= max_adjacent_paper_rolls <= 8
         max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
+        # Reduce attribute lookups.
+        tiles = self.tiles
         return sum(
-            1 if (self.tiles[i] and self.tiles[i] <= max_neighbourhood_paper_rolls) else 0
+            1 if (tiles[i] and tiles[i] <= max_neighbourhood_paper_rolls) else 0
             for i in self.indices
         )
 
-    def prune(self, max_adjacent_paper_rolls: int) -> 'Diagram':
+    def count_and_sweep_accessible_paper_rolls(self, max_adjacent_paper_rolls: int) -> int:
         assert 0 <= max_adjacent_paper_rolls <= 8
         max_neighbourhood_paper_rolls = max_adjacent_paper_rolls + 1
-        tiles = [
-            1 if (neighbourhood_paper_rolls > max_neighbourhood_paper_rolls) else 0
-            for neighbourhood_paper_rolls in self.tiles
-        ]
-        bake_neighbourhood_paper_rolls(tiles, self.indices, self.kernel_offsets)
-        return Diagram(self.width, self.height, tuple(tiles), self.indices, self.kernel_offsets)
+        accessible_paper_rolls = 0
+        # Reduce attribute lookups.
+        tiles = self.tiles
+        for i in self.indices:
+            neighbourhood_paper_rolls = tiles[i]
+            if not neighbourhood_paper_rolls:
+                continue
+            if neighbourhood_paper_rolls <= max_neighbourhood_paper_rolls:
+                accessible_paper_rolls += 1
+                tiles[i] = 0
+            else:
+                tiles[i] = 1
+        return accessible_paper_rolls
 
 
 ########################################################################################################################
@@ -119,7 +130,9 @@ def count_accessible_paper_rolls(lines: Iterable[str]) -> int:
     ... ])
     13
     """
-    return Diagram.from_lines(lines).count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
+    diagram = Diagram.from_lines(lines)
+    diagram.mark_neighbourhood_paper_rolls()
+    return diagram.count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
 
 
 ########################################################################################################################
@@ -143,10 +156,11 @@ def count_potentially_accessible_paper_rolls(lines: Iterable[str]) -> int:
     43
     """
     diagram = Diagram.from_lines(lines)
-    accessible_paper_rolls = diagram.count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
-    while (pruned_diagram := diagram.prune(MAX_ADJACENT_PAPER_ROLLS)) != diagram:
-        accessible_paper_rolls += pruned_diagram.count_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)
-        diagram = pruned_diagram
+    diagram.mark_neighbourhood_paper_rolls()
+    accessible_paper_rolls = 0
+    while (newly_accessible_paper_rolls := diagram.count_and_sweep_accessible_paper_rolls(MAX_ADJACENT_PAPER_ROLLS)):
+        accessible_paper_rolls += newly_accessible_paper_rolls
+        diagram.mark_neighbourhood_paper_rolls()
     return accessible_paper_rolls
 
 
