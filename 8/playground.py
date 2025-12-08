@@ -130,6 +130,48 @@ def multiply_three_largest_circuit_sizes_after_one_thousand_connections(lines: I
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def multiply_x_coordinates_of_last_connection(lines: Iterable[str]) -> int:
+    """
+    >>> multiply_x_coordinates_of_last_connection([
+    ...     '162,817,812',
+    ...     '57,618,57',
+    ...     '906,360,560',
+    ...     '592,479,940',
+    ...     '352,342,300',
+    ...     '466,668,158',
+    ...     '542,29,236',
+    ...     '431,825,988',
+    ...     '739,650,466',
+    ...     '52,470,668',
+    ...     '216,146,977',
+    ...     '819,987,18',
+    ...     '117,168,530',
+    ...     '805,96,715',
+    ...     '346,949,466',
+    ...     '970,615,88',
+    ...     '941,993,340',
+    ...     '862,61,35',
+    ...     '984,92,344',
+    ...     '425,690,689',
+    ... ])
+    25272
+    """
+    junction_boxes = tuple(parse_junction_boxes(lines))
+    circuits = Circuits.from_junction_boxes(junction_boxes)
+
+    for (a, b) in pairs_by_distance(junction_boxes):
+        circuits.maybe_connect_pair(a, b)
+        if len(circuits.circuit_junction_boxes) == 1:
+            break
+    assert len(circuits.circuit_junction_boxes) == 1
+
+    return a.x * b.x
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -144,6 +186,8 @@ def main() -> None:
 
     if args.part == 1:
         print(multiply_three_largest_circuit_sizes_after_one_thousand_connections(lines))
+    elif args.part == 2:
+        print(multiply_x_coordinates_of_last_connection(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
