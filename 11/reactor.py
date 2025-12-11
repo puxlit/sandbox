@@ -20,6 +20,7 @@ VERTEX_ADJACENCIES_LINE_PATTERN = re.compile(r'^([a-z]+): *([ a-z]+)$')
 class DirectedGraph(NamedTuple):
     vertices: set[str]
     vertex_adjacencies: dict[str, set[str]]
+    paths_count_cache: dict[tuple[str, str], int]
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> 'DirectedGraph':
@@ -38,9 +39,13 @@ class DirectedGraph(NamedTuple):
                 vertex_adjacencies[vertex] = adjacent_vertices
             else:
                 vertex_adjacencies[vertex] |= adjacent_vertices
-        return DirectedGraph(set(vertices), vertex_adjacencies)
+        return DirectedGraph(set(vertices), vertex_adjacencies, {})
 
     def count_paths(self, from_vertex: str, to_vertex: str) -> int:
+        cached_paths_count = self.paths_count_cache.get((from_vertex, to_vertex))
+        if cached_paths_count is not None:
+            return cached_paths_count
+
         assert from_vertex in self.vertices
         assert to_vertex in self.vertices
 
@@ -50,7 +55,9 @@ class DirectedGraph(NamedTuple):
         if from_vertex not in self.vertex_adjacencies:
             return 0
 
-        return sum(self.count_paths(adjacent_vertex, to_vertex) for adjacent_vertex in self.vertex_adjacencies[from_vertex])
+        paths_count = sum(self.count_paths(adjacent_vertex, to_vertex) for adjacent_vertex in self.vertex_adjacencies[from_vertex])
+        self.paths_count_cache[(from_vertex, to_vertex)] = paths_count
+        return paths_count
 
 
 ########################################################################################################################
@@ -78,6 +85,40 @@ def count_paths_from_you_to_out(lines: Iterable[str]) -> int:
 
 
 ########################################################################################################################
+# Part 2
+########################################################################################################################
+
+def count_paths_from_svr_to_out_visiting_dac_and_fft(lines: Iterable[str]) -> int:
+    """
+    >>> count_paths_from_svr_to_out_visiting_dac_and_fft([
+    ...     'svr: aaa bbb',
+    ...     'aaa: fft',
+    ...     'fft: ccc',
+    ...     'bbb: tty',
+    ...     'tty: ccc',
+    ...     'ccc: ddd eee',
+    ...     'ddd: hub',
+    ...     'hub: fff',
+    ...     'eee: dac',
+    ...     'dac: fff',
+    ...     'fff: ggg hhh',
+    ...     'ggg: out',
+    ...     'hhh: out',
+    ... ])
+    2
+    """
+    rack = DirectedGraph.from_lines(lines)
+    if (paths_count := rack.count_paths('dac', 'fft')):
+        paths_count *= rack.count_paths('svr', 'dac')
+        paths_count *= rack.count_paths('fft', 'out')
+    else:
+        assert (paths_count := rack.count_paths('fft', 'dac'))
+        paths_count *= rack.count_paths('svr', 'fft')
+        paths_count *= rack.count_paths('dac', 'out')
+    return paths_count
+
+
+########################################################################################################################
 # CLI bootstrap
 ########################################################################################################################
 
@@ -92,6 +133,8 @@ def main() -> None:
 
     if args.part == 1:
         print(count_paths_from_you_to_out(lines))
+    elif args.part == 2:
+        print(count_paths_from_svr_to_out_visiting_dac_and_fft(lines))
     else:
         raise ValueError(f'{args.part} is not a valid part')
 
